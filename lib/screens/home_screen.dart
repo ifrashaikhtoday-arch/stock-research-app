@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
+import 'stock_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -74,21 +75,34 @@ class _HomeScreenState extends State<HomeScreen> {
                     itemBuilder: (context, index) {
                       final stock = _stocks[index];
                       final isPositive = stock.changePercent >= 0;
-                      return Card(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        child: ListTile(
-                          title: Text(stock.companyName,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
-                          subtitle: Text('₹${stock.currentPrice}'),
-                          trailing: Text(
-                            '${isPositive ? '+' : ''}${stock.changePercent}%',
-                            style: TextStyle(
-                              color: isPositive
-                                  ? Colors.green
-                                  : Colors.red,
-                              fontWeight: FontWeight.bold,
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StockDetailScreen(
+                                symbol: stock.symbol,
+                                companyName: stock.companyName,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          child: ListTile(
+                            title: Text(stock.companyName,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            subtitle: Text('₹${stock.currentPrice}'),
+                            trailing: Text(
+                              '${isPositive ? '+' : ''}${stock.changePercent}%',
+                              style: TextStyle(
+                                color: isPositive
+                                    ? Colors.green
+                                    : Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
