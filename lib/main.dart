@@ -5,11 +5,12 @@ import 'data/stock_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Test fetching Reliance stock price
   final stockService = StockService();
   try {
-    final price = await stockService.getStockPrice('RELIANCE.NS');
-    print('Reliance price: ₹$price');
+    final stock = await stockService.getStockData('RELIANCE.NS');
+    print('Company: ${stock.companyName}');
+    print('Price: ₹${stock.currentPrice}');
+    print('Change: ${stock.changePercent}%');
   } catch (e) {
     print('Error: $e');
   }
