@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'data/stock_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Test fetching Reliance stock price
+  final stockService = StockService();
+  try {
+    final price = await stockService.getStockPrice('RELIANCE.NS');
+    print('Reliance price: ₹$price');
+  } catch (e) {
+    print('Error: $e');
+  }
+  
   runApp(const MyApp());
 }
 
