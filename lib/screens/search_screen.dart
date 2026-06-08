@@ -86,13 +86,13 @@ class _SearchScreenState extends State<SearchScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onSubmitted: (value) => _searchStock(value.toUpperCase()),
+                    onSubmitted: (value) => _searchStock(value),
                   ),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () =>
-                      _searchStock(_controller.text.toUpperCase()),
+                      _searchStock(_controller.text),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,

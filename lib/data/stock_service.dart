@@ -116,4 +116,31 @@ class StockService {
     }
     return watchlist;
   }
+  // Fetches 30 days of closing prices for a stock
+  Future<List<double>> getPriceHistory(String symbol) async {
+    final url = Uri.parse(
+      'https://query1.finance.yahoo.com/v8/finance/chart/$symbol?interval=1d&range=1mo'
+    );
+
+    final response = await http.get(url, headers: {
+      'User-Agent': 'Mozilla/5.0',
+    });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      
+      // Get the list of closing prices
+      final closes = data['chart']['result'][0]['indicators']['quote'][0]['close'] as List;
+      
+      // Convert to list of doubles and remove any null values
+      final prices = closes
+          .where((price) => price != null)
+          .map((price) => (price as num).toDouble())
+          .toList();
+
+      return prices;
+    } else {
+      throw Exception('Failed to fetch price history for $symbol');
+    }
+  }
 }
