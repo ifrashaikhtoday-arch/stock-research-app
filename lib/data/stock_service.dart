@@ -143,4 +143,52 @@ class StockService {
       throw Exception('Failed to fetch price history for $symbol');
     }
   }
+  // Calculates support and resistance levels from price history
+  Map<String, double> getSupportResistance(List<double> prices) {
+    if (prices.isEmpty) {
+      return {'support': 0, 'resistance': 0};
+    }
+
+    // Split prices into windows of 5 days
+    // We look for local lows (support) and local highs (resistance)
+    List<double> localLows = [];
+    List<double> localHighs = [];
+
+    for (int i = 2; i < prices.length - 2; i++) {
+      // A local low is a price lower than the 2 days before and after it
+      if (prices[i] < prices[i - 1] &&
+          prices[i] < prices[i - 2] &&
+          prices[i] < prices[i + 1] &&
+          prices[i] < prices[i + 2]) {
+        localLows.add(prices[i]);
+      }
+
+      // A local high is a price higher than the 2 days before and after it
+      if (prices[i] > prices[i - 1] &&
+          prices[i] > prices[i - 2] &&
+          prices[i] > prices[i + 1] &&
+          prices[i] > prices[i + 2]) {
+        localHighs.add(prices[i]);
+      }
+    }
+
+    // If no local lows found, use the overall lowest price
+    double support = localLows.isEmpty
+        ? prices.reduce((a, b) => a < b ? a : b)
+        : localLows.reduce((a, b) => a + b) / localLows.length;
+
+    // If no local highs found, use the overall highest price
+    double resistance = localHighs.isEmpty
+        ? prices.reduce((a, b) => a > b ? a : b)
+        : localHighs.reduce((a, b) => a + b) / localHighs.length;
+
+    // Round to 2 decimal places
+    support = double.parse(support.toStringAsFixed(2));
+    resistance = double.parse(resistance.toStringAsFixed(2));
+
+    return {
+      'support': support,
+      'resistance': resistance,
+    };
+  }
 }

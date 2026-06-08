@@ -5,15 +5,17 @@ import 'data/stock_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Test fetching 30 days of price history
   final stockService = StockService();
   try {
+    // Fetch 30 days of price history
     final prices = await stockService.getPriceHistory('RELIANCE.NS');
-    print('Total days of data: ${prices.length}');
-    print('Latest price: ₹${prices.last}');
-    print('Oldest price: ₹${prices.first}');
-    print('Highest price: ₹${prices.reduce((a, b) => a > b ? a : b)}');
-    print('Lowest price: ₹${prices.reduce((a, b) => a < b ? a : b)}');
+    
+    // Calculate support and resistance
+    final levels = stockService.getSupportResistance(prices);
+    
+    print('Current Price: ₹${prices.last}');
+    print('Support Level: ₹${levels['support']}');
+    print('Resistance Level: ₹${levels['resistance']}');
   } catch (e) {
     print('Error: $e');
   }
