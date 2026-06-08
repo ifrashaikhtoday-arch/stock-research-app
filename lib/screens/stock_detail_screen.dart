@@ -18,6 +18,8 @@ class StockDetailScreen extends StatefulWidget {
 class _StockDetailScreenState extends State<StockDetailScreen> {
   final StockService _stockService = StockService();
   StockData? _stockData;
+  List<double> _priceHistory = [];
+  Map<String, double> _levels = {};
   bool _isLoading = true;
 
   @override
@@ -26,11 +28,16 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     _loadStockData();
   }
 
-  Future<void> _loadStockData() async {
+ Future<void> _loadStockData() async {
     try {
       final data = await _stockService.getStockData(widget.symbol);
+      final prices = await _stockService.getPriceHistory(widget.symbol);
+      final levels = _stockService.getSupportResistance(prices);
+      
       setState(() {
         _stockData = data;
+        _priceHistory = prices;
+        _levels = levels;
         _isLoading = false;
       });
     } catch (e) {
@@ -98,6 +105,15 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                           '₹${_stockData!.high52Week}'),
                       _detailRow(
                           '52 Week Low', '₹${_stockData!.low52Week}'),
+                          const Divider(height: 32),
+const Text('Support & Resistance',
+    style: TextStyle(
+        fontSize: 18, fontWeight: FontWeight.bold)),
+const SizedBox(height: 12),
+         _supportResistanceRow(
+          'Support', _levels['support'] ?? 0),
+        _supportResistanceRow(
+    'Resistance', _levels['resistance'] ?? 0),
                     ],
                   ),
                 ),
@@ -115,6 +131,41 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
           Text(value,
               style: const TextStyle(
                   fontSize: 16, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+  Widget _supportResistanceRow(String label, double value) {
+    final bool isSupport = label == 'Support';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: isSupport ? Colors.green : Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(label,
+                  style: const TextStyle(
+                      fontSize: 16, color: Colors.grey)),
+            ],
+          ),
+          Text(
+            '₹$value',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isSupport ? Colors.green : Colors.red,
+            ),
+          ),
         ],
       ),
     );
