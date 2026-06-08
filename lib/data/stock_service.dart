@@ -1,6 +1,52 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
+// Map of company names to NSE symbols
+const Map<String, String> stockSymbols = {
+  'reliance': 'RELIANCE.NS',
+  'tcs': 'TCS.NS',
+  'infosys': 'INFY.NS',
+  'infy': 'INFY.NS',
+  'hdfc bank': 'HDFCBANK.NS',
+  'hdfcbank': 'HDFCBANK.NS',
+  'icici bank': 'ICICIBANK.NS',
+  'icicibank': 'ICICIBANK.NS',
+  'wipro': 'WIPRO.NS',
+  'bajaj finance': 'BAJFINANCE.NS',
+  'bajfinance': 'BAJFINANCE.NS',
+  'asian paints': 'ASIANPAINT.NS',
+  'maruti': 'MARUTI.NS',
+  'maruti suzuki': 'MARUTI.NS',
+  'sbi': 'SBIN.NS',
+  'state bank': 'SBIN.NS',
+  'ongc': 'ONGC.NS',
+  'coal india': 'COALINDIA.NS',
+  'tata motors': 'TATAMOTORS.NS',
+  'tata steel': 'TATASTEEL.NS',
+  'adani ports': 'ADANIPORTS.NS',
+  'adani enterprises': 'ADANIENT.NS',
+  'sun pharma': 'SUNPHARMA.NS',
+  'itc': 'ITC.NS',
+  'ltim': 'LTIM.NS',
+  'hcl': 'HCLTECH.NS',
+  'hcl tech': 'HCLTECH.NS',
+  'axis bank': 'AXISBANK.NS',
+  'kotak': 'KOTAKBANK.NS',
+  'kotak bank': 'KOTAKBANK.NS',
+  'nestle': 'NESTLEIND.NS',
+  'britannia': 'BRITANNIA.NS',
+  'dr reddy': 'DRREDDY.NS',
+  'cipla': 'CIPLA.NS',
+  'ultracemco': 'ULTRACEMCO.NS',
+  'ultratech': 'ULTRACEMCO.NS',
+  'hindalco': 'HINDALCO.NS',
+  'hero motocorp': 'HEROMOTOCO.NS',
+  'bajaj auto': 'BAJAJ-AUTO.NS',
+  'titan': 'TITAN.NS',
+  'power grid': 'POWERGRID.NS',
+  'ntpc': 'NTPC.NS',
+  'tech mahindra': 'TECHM.NS',
+  'indusind bank': 'INDUSINDBK.NS',
+};
 // This class holds all the information about a stock
 class StockData {
   final String symbol;

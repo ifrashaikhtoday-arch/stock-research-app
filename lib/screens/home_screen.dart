@@ -1,3 +1,4 @@
+import 'search_screen.dart';
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';
@@ -10,6 +11,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+void _onTabTapped(int index) {
+  if (index == 1) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchScreen()),
+    );
+  } else {
+    setState(() => _selectedIndex = index);
+  }
+}
   final StockService _stockService = StockService();
   List<StockData> _stocks = [];
   bool _isLoading = true;
@@ -114,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
+        onTap: _onTabTapped,
         selectedItemColor: Colors.green,
         unselectedItemColor: Colors.grey,
         items: const [
