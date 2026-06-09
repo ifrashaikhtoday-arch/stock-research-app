@@ -117,9 +117,9 @@ class StockService {
     return watchlist;
   }
   // Fetches 30 days of closing prices for a stock
-  Future<List<double>> getPriceHistory(String symbol) async {
+Future<List<double>> getPriceHistory(String symbol, {String period = '1mo'}) async {
     final url = Uri.parse(
-      'https://query1.finance.yahoo.com/v8/finance/chart/$symbol?interval=1d&range=1mo'
+      'https://query1.finance.yahoo.com/v8/finance/chart/$symbol?interval=${_getInterval(period)}&range=$period'
     );
 
     final response = await http.get(url, headers: {
@@ -190,5 +190,27 @@ class StockService {
       'support': support,
       'resistance': resistance,
     };
+  }
+  String _getInterval(String period) {
+    switch (period) {
+      case '1d':
+        return '5m';
+      case '5d':
+        return '15m';
+      case '1mo':
+        return '1d';
+      case '3mo':
+        return '1d';
+      case '6mo':
+        return '1wk';
+      case '1y':
+        return '1wk';
+      case '3y':
+        return '1mo';
+      case '5y':
+        return '1mo';
+      default:
+        return '1d';
+    }
   }
 }
