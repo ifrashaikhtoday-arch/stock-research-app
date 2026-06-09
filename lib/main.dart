@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'data/stock_service.dart';
-import 'screens/watchlist_screen.dart';
+import 'screens/news_screen.dart';
 
 
 void main() async {
@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const WatchlistScreen(),
+      home: const NewsScreen(),
     );
   }
 }
