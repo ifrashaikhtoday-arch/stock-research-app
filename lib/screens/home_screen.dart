@@ -1,7 +1,8 @@
-import 'search_screen.dart';
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';
+import 'search_screen.dart';
+import 'watchlist_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,17 +12,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
-void _onTabTapped(int index) {
-  if (index == 1) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SearchScreen()),
-    );
-  } else {
-    setState(() => _selectedIndex = index);
-  }
-}
   final StockService _stockService = StockService();
   List<StockData> _stocks = [];
   bool _isLoading = true;
@@ -45,6 +35,22 @@ void _onTabTapped(int index) {
       });
     } catch (e) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  void _onTabTapped(int index) {
+    if (index == 1) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SearchScreen()),
+      );
+    } else if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const WatchlistScreen()),
+      );
+    } else {
+      setState(() => _selectedIndex = index);
     }
   }
 
@@ -87,34 +93,32 @@ void _onTabTapped(int index) {
                     itemBuilder: (context, index) {
                       final stock = _stocks[index];
                       final isPositive = stock.changePercent >= 0;
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StockDetailScreen(
-                                symbol: stock.symbol,
-                                companyName: stock.companyName,
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        child: ListTile(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StockDetailScreen(
+                                  symbol: stock.symbol,
+                                  companyName: stock.companyName,
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        child: Card(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          child: ListTile(
-                            title: Text(stock.companyName,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                            subtitle: Text('₹${stock.currentPrice}'),
-                            trailing: Text(
-                              '${isPositive ? '+' : ''}${stock.changePercent}%',
-                              style: TextStyle(
-                                color: isPositive
-                                    ? Colors.green
-                                    : Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            );
+                          },
+                          title: Text(stock.companyName,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold)),
+                          subtitle: Text('₹${stock.currentPrice}'),
+                          trailing: Text(
+                            '${isPositive ? '+' : ''}${stock.changePercent}%',
+                            style: TextStyle(
+                              color: isPositive
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),

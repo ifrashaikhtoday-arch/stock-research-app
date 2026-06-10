@@ -21,8 +21,10 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   StockData? _stockData;
   List<double> _priceHistory = [];
   Map<String, double> _levels = {};
+  List<CandleData> _candleData = [];
   bool _isLoading = true;
   String _selectedPeriod = '1mo';
+  bool _isCandlestick = false;
 
   @override
   void initState() {
@@ -35,10 +37,12 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     try {
       final data = await _stockService.getStockData(widget.symbol);
       final prices = await _stockService.getPriceHistory(widget.symbol, period: period);
+      final candles = await _stockService.getCandleData(widget.symbol, period: period);
       final levels = _stockService.getSupportResistance(prices);
       setState(() {
         _stockData = data;
         _priceHistory = prices;
+        _candleData = candles;
         _levels = levels;
         _isLoading = false;
       });
@@ -64,7 +68,6 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Price and change
                       Row(
                         children: [
                           Text(
@@ -93,14 +96,34 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      // Time period buttons
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text('Line',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: !_isCandlestick
+                                      ? Colors.green
+                                      : Colors.grey)),
+                          Switch(
+                            value: _isCandlestick,
+                            onChanged: (value) =>
+                                setState(() => _isCandlestick = value),
+                            activeColor: Colors.green,
+                          ),
+                          Text('Candle',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: _isCandlestick
+                                      ? Colors.green
+                                      : Colors.grey)),
+                        ],
+                      ),
                       _buildPeriodButtons(),
                       const SizedBox(height: 8),
-                      // Chart
                       _buildChart(),
                       const SizedBox(height: 24),
-                      // Stock Details
                       const Text('Stock Details',
                           style: TextStyle(
                               fontSize: 18,
@@ -114,7 +137,6 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                       _detailRow('52 Week Low',
                           '₹${_stockData!.low52Week}'),
                       const Divider(height: 32),
-                      // Support and Resistance
                       const Text('Support & Resistance',
                           style: TextStyle(
                               fontSize: 18,
@@ -141,7 +163,6 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
           final period = entry.value;
           final label = labels[entry.key];
           final isSelected = _selectedPeriod == period;
-
           return GestureDetector(
             onTap: () {
               setState(() => _selectedPeriod = period);
@@ -178,6 +199,14 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   }
 
   Widget _buildChart() {
+    if (_isCandlestick) {
+      return _buildCandlestickChart();
+    } else {
+      return _buildLineChart();
+    }
+  }
+
+  Widget _buildLineChart() {
     if (_priceHistory.isEmpty) return const SizedBox();
 
     final spots = _priceHistory.asMap().entries.map((entry) {
@@ -275,6 +304,35 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     );
   }
 
+  Widget _buildCandlestickChart() {
+    if (_candleData.isEmpty) return const SizedBox();
+
+    final minPrice =
+        _candleData.map((c) => c.low).reduce((a, b) => a < b ? a : b);
+    final maxPrice =
+        _candleData.map((c) => c.high).reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      height: 200,
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: CustomPaint(
+        painter: CandlestickPainter(
+          candles: _candleData,
+          minPrice: minPrice,
+          maxPrice: maxPrice,
+          supportLevel: _levels['support'] ?? 0,
+          resistanceLevel: _levels['resistance'] ?? 0,
+        ),
+        child: Container(),
+      ),
+    );
+  }
+
   Widget _detailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -326,4 +384,97 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
       ),
     );
   }
+}
+
+class CandlestickPainter extends CustomPainter {
+  final List<CandleData> candles;
+  final double minPrice;
+  final double maxPrice;
+  final double supportLevel;
+  final double resistanceLevel;
+
+  CandlestickPainter({
+    required this.candles,
+    required this.minPrice,
+    required this.maxPrice,
+    required this.supportLevel,
+    required this.resistanceLevel,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (candles.isEmpty) return;
+
+    final priceRange = maxPrice - minPrice;
+    final candleWidth = size.width / candles.length;
+    final padding = candleWidth * 0.2;
+
+    double priceToY(double price) {
+      return size.height - ((price - minPrice) / priceRange) * size.height;
+    }
+
+    // Draw support line
+    final supportPaint = Paint()
+      ..color = Colors.green
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(0, priceToY(supportLevel)),
+      Offset(size.width, priceToY(supportLevel)),
+      supportPaint,
+    );
+
+    // Draw resistance line
+    final resistancePaint = Paint()
+      ..color = Colors.red
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(0, priceToY(resistanceLevel)),
+      Offset(size.width, priceToY(resistanceLevel)),
+      resistancePaint,
+    );
+
+    // Draw candles
+    for (int i = 0; i < candles.length; i++) {
+      final candle = candles[i];
+      final isGreen = candle.close >= candle.open;
+      final color = isGreen ? Colors.green : Colors.red;
+
+      final candlePaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.fill;
+
+      final wickPaint = Paint()
+        ..color = color
+        ..strokeWidth = 1
+        ..style = PaintingStyle.stroke;
+
+      final x = i * candleWidth + candleWidth / 2;
+
+      canvas.drawLine(
+        Offset(x, priceToY(candle.high)),
+        Offset(x, priceToY(candle.low)),
+        wickPaint,
+      );
+
+      final bodyTop = priceToY(isGreen ? candle.close : candle.open);
+      final bodyBottom = priceToY(isGreen ? candle.open : candle.close);
+      final bodyHeight =
+          (bodyBottom - bodyTop).abs().clamp(1.0, double.infinity);
+
+      canvas.drawRect(
+        Rect.fromLTWH(
+          x - candleWidth / 2 + padding,
+          bodyTop,
+          candleWidth - padding * 2,
+          bodyHeight,
+        ),
+        candlePaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

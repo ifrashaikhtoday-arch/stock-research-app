@@ -67,6 +67,22 @@ class StockData {
     required this.low52Week,
   });
 }
+// This holds one candle of data (one day or one hour)
+class CandleData {
+  final double open;
+  final double high;
+  final double low;
+  final double close;
+  final int timestamp;
+
+  CandleData({
+    required this.open,
+    required this.high,
+    required this.low,
+    required this.close,
+    required this.timestamp,
+  });
+}
 
 class StockService {
   // Fetches full stock details for any Indian stock
@@ -211,6 +227,49 @@ Future<List<double>> getPriceHistory(String symbol, {String period = '1mo'}) asy
         return '1mo';
       default:
         return '1d';
+    }
+  }
+  // Fetches OHLC candle data for candlestick chart
+  Future<List<CandleData>> getCandleData(String symbol, {String period = '1mo'}) async {
+    final url = Uri.parse(
+      'https://query1.finance.yahoo.com/v8/finance/chart/$symbol?interval=${_getInterval(period)}&range=$period'
+    );
+
+    final response = await http.get(url, headers: {
+      'User-Agent': 'Mozilla/5.0',
+    });
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final result = data['chart']['result'][0];
+      final quote = result['indicators']['quote'][0];
+      final timestamps = result['timestamp'] as List;
+
+      final opens = quote['open'] as List;
+      final highs = quote['high'] as List;
+      final lows = quote['low'] as List;
+      final closes = quote['close'] as List;
+
+      List<CandleData> candles = [];
+
+      for (int i = 0; i < timestamps.length; i++) {
+        if (opens[i] != null &&
+            highs[i] != null &&
+            lows[i] != null &&
+            closes[i] != null) {
+          candles.add(CandleData(
+            open: (opens[i] as num).toDouble(),
+            high: (highs[i] as num).toDouble(),
+            low: (lows[i] as num).toDouble(),
+            close: (closes[i] as num).toDouble(),
+            timestamp: (timestamps[i] as num).toInt(),
+          ));
+        }
+      }
+
+      return candles;
+    } else {
+      throw Exception('Failed to fetch candle data');
     }
   }
 }
