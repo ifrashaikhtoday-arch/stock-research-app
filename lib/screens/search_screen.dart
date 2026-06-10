@@ -34,15 +34,29 @@ class _SearchScreenState extends State<SearchScreen> {
       _result = null;
     });
 
-    // Convert company name to symbol if needed
     String symbol = query.trim().toLowerCase();
+    
+    // First try exact match
     if (stockSymbols.containsKey(symbol)) {
       symbol = stockSymbols[symbol]!;
     } else {
-      // If not found in map, try as direct symbol
-      symbol = query.trim().toUpperCase();
-      if (!symbol.endsWith('.NS')) {
-        symbol = '$symbol.NS';
+      // Try partial match — find any key that contains the search query
+      String? partialMatch;
+      for (String key in stockSymbols.keys) {
+        if (key.contains(symbol) || symbol.contains(key)) {
+          partialMatch = stockSymbols[key];
+          break;
+        }
+      }
+      
+      if (partialMatch != null) {
+        symbol = partialMatch;
+      } else {
+        // Try as direct NSE symbol
+        symbol = query.trim().toUpperCase();
+        if (!symbol.endsWith('.NS')) {
+          symbol = '$symbol.NS';
+        }
       }
     }
 
