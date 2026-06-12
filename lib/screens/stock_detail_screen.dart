@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../data/stock_service.dart';
+import '../utils.dart';
 
 class StockDetailScreen extends StatefulWidget {
   final String symbol;
@@ -25,6 +27,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   bool _isLoading = true;
   String _selectedPeriod = '1mo';
   bool _isCandlestick = false;
+  bool _isSaved = false;
 
   @override
   void initState() {
@@ -51,6 +54,70 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     }
   }
 
+  void _showToast(BuildContext context, String message, Color color,
+      {bool showUndo = false}) {
+    OverlayEntry? entry;
+    entry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        bottom: 50,
+        left: 20,
+        right: 20,
+        child: Material(
+          borderRadius: BorderRadius.circular(8),
+          color: color,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    message,
+                    style: const TextStyle(color: Colors.white),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (showUndo)
+                  GestureDetector(
+                    onTap: () {
+                      setState(() => _isSaved = false);
+                      entry?.remove();
+                      _showToast(
+                          context, 'Removed from watchlist', Colors.grey);
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.only(left: 12),
+                      child: Text(
+                        'UNDO',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(entry!);
+    Future.delayed(const Duration(seconds: 3), () {
+      entry?.remove();
+    });
+  }
+
+  void _shareStock() {
+    if (_stockData == null) return;
+    final isPositive = _stockData!.changePercent >= 0;
+    final text = '📈 ${widget.companyName} (${widget.symbol})\n'
+        'Price: ${formatRupee(_stockData!.currentPrice)}\n'
+        'Change: ${isPositive ? '+' : ''}${_stockData!.changePercent}%\n'
+        'Support: ${formatRupee(_levels['support'] ?? 0)}\n'
+        'Resistance: ${formatRupee(_levels['resistance'] ?? 0)}\n\n'
+        'Checked on StockSense app 📊';
+    Share.share(text);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,6 +125,28 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
         title: Text(widget.companyName),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: _shareStock,
+          ),
+          IconButton(
+            icon: Icon(
+              _isSaved ? Icons.bookmark : Icons.bookmark_add,
+              color: _isSaved ? Colors.yellow : Colors.white,
+            ),
+            onPressed: () {
+              if (_isSaved) return;
+              setState(() => _isSaved = true);
+              _showToast(
+                context,
+                '${widget.companyName} added to watchlist!',
+                Colors.green,
+                showUndo: true,
+              );
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -71,7 +160,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                       Row(
                         children: [
                           Text(
-                            '₹${_stockData!.currentPrice}',
+                            formatRupee(_stockData!.currentPrice),
                             style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
@@ -133,9 +222,9 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                       _detailRow('P/E Ratio',
                           _stockData!.peRatio.toStringAsFixed(2)),
                       _detailRow('52 Week High',
-                          '₹${_stockData!.high52Week}'),
+                          formatRupee(_stockData!.high52Week)),
                       _detailRow('52 Week Low',
-                          '₹${_stockData!.low52Week}'),
+                          formatRupee(_stockData!.low52Week)),
                       const Divider(height: 32),
                       const Text('Support & Resistance',
                           style: TextStyle(
@@ -373,7 +462,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
             ],
           ),
           Text(
-            '₹$value',
+            formatRupee(value),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -413,7 +502,6 @@ class CandlestickPainter extends CustomPainter {
       return size.height - ((price - minPrice) / priceRange) * size.height;
     }
 
-    // Draw support line
     final supportPaint = Paint()
       ..color = Colors.green
       ..strokeWidth = 1
@@ -424,7 +512,6 @@ class CandlestickPainter extends CustomPainter {
       supportPaint,
     );
 
-    // Draw resistance line
     final resistancePaint = Paint()
       ..color = Colors.red
       ..strokeWidth = 1
@@ -435,7 +522,6 @@ class CandlestickPainter extends CustomPainter {
       resistancePaint,
     );
 
-    // Draw candles
     for (int i = 0; i < candles.length; i++) {
       final candle = candles[i];
       final isGreen = candle.close >= candle.open;
