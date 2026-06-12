@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "734370663348",
+    "project_id": "stock-research-app-d2013",
+    "storage_bucket": "stock-research-app-d2013.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:734370663348:android:ddaf364e8541ca7ed400e1",
+        "android_client_info": {
+          "package_name": "com.example.stock_research_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFEgEdWTZIhexzUPq3ALtpWHU-BoraesQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
