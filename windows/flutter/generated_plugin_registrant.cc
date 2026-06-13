@@ -16,8 +16,11 @@
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   CloudFirestorePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("CloudFirestorePluginCApi"));
+<<<<<<< HEAD
   FileSelectorWindowsRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FileSelectorWindows"));
+=======
+>>>>>>> fe5b62baef5143683683a80cc84ba3c33174bbec
   FirebaseAuthPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FirebaseAuthPluginCApi"));
   FirebaseCorePluginCApiRegisterWithRegistrar(
