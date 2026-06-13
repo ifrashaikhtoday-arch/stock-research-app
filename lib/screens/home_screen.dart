@@ -1,3 +1,4 @@
+import 'compare_screen.dart';
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';
@@ -245,12 +246,19 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Color(0xFF1A1A1A),
             ),
           ),
-          Text(
-            'See all',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.green.shade700,
-              fontWeight: FontWeight.w600,
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const CompareScreen()),
+            ),
+            child: Text(
+              'Compare ⇄',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.green.shade700,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
