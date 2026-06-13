@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -16,7 +17,7 @@ class AuthService {
         email: email.trim(),
         password: password.trim(),
       );
-      return null; // null means success
+      return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
     }
@@ -29,7 +30,7 @@ class AuthService {
         email: email.trim(),
         password: password.trim(),
       );
-      return null; // null means success
+      return null;
     } on FirebaseAuthException catch (e) {
       return e.message;
     }
@@ -38,5 +39,18 @@ class AuthService {
   // LOG OUT
   Future<void> logOut() async {
     await _auth.signOut();
+  }
+
+  // Check if user has completed onboarding
+  Future<bool> hasCompletedOnboarding() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return false;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    return doc.data()?['onboardingComplete'] == true;
   }
 }
