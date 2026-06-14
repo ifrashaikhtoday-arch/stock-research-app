@@ -1,9 +1,13 @@
+import 'search_screen.dart';
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';
+<<<<<<< HEAD
 import 'search_screen.dart';
 import 'watchlist_screen.dart';
 import 'profile_screen.dart';
+=======
+>>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,18 +17,20 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
+
+void _onTabTapped(int index) {
+  if (index == 1) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchScreen()),
+    );
+  } else {
+    setState(() => _selectedIndex = index);
+  }
+}
   final StockService _stockService = StockService();
   List<StockData> _stocks = [];
   bool _isLoading = true;
-
-  final List<Map<String, String>> _topStocks = [
-    {'name': 'Reliance', 'symbol': 'RELIANCE.NS'},
-    {'name': 'TCS', 'symbol': 'TCS.NS'},
-    {'name': 'Infosys', 'symbol': 'INFY.NS'},
-    {'name': 'HDFC Bank', 'symbol': 'HDFCBANK.NS'},
-    {'name': 'Wipro', 'symbol': 'WIPRO.NS'},
-    {'name': 'SBI', 'symbol': 'SBIN.NS'},
-  ];
 
   @override
   void initState() {
@@ -34,9 +40,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadStocks() async {
     try {
-      final stocks = await _stockService.getWatchlistData(
-        _topStocks.map((s) => s['symbol']!).toList(),
-      );
+      final stocks = await _stockService.getWatchlistData([
+        'RELIANCE.NS',
+        'TCS.NS',
+        'INFY.NS',
+      ]);
       setState(() {
         _stocks = stocks;
         _isLoading = false;
@@ -46,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+<<<<<<< HEAD
   void _onTabTapped(int index) {
     if (index == 1) {
       Navigator.push(context,
@@ -79,57 +88,81 @@ class _HomeScreenState extends State<HomeScreen> {
     return '🟢 Market Open';
   }
 
+=======
+>>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: CustomScrollView(
-        slivers: [
-          _buildHeader(),
-          SliverToBoxAdapter(child: _buildMarketStatus()),
-          SliverToBoxAdapter(child: _buildSearchBar()),
-          SliverToBoxAdapter(child: _buildSectionTitle('Top Stocks')),
-          SliverToBoxAdapter(child: _buildStockList()),
-        ],
-      ),
-      bottomNavigationBar: _buildBottomNav(),
-    );
-  }
+        appBar: AppBar(
+  title: const Text('StockSense'),
+  backgroundColor: Theme.of(context).colorScheme.primary,
+  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+),
 
-  Widget _buildHeader() {
-    return SliverAppBar(
-      expandedHeight: 120,
-      floating: false,
-      pinned: true,
-      backgroundColor: const Color(0xFF1B5E20),
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+        
+      
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search stocks...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _getGreeting() + ' 👋',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
+          const Padding(
+            padding: EdgeInsets.all(12.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('My Watchlist',
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          _isLoading
+              ? const CircularProgressIndicator()
+              : Expanded(
+                  child: ListView.builder(
+                    itemCount: _stocks.length,
+                    itemBuilder: (context, index) {
+                      final stock = _stocks[index];
+                      final isPositive = stock.changePercent >= 0;
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => StockDetailScreen(
+                                symbol: stock.symbol,
+                                companyName: stock.companyName,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          child: ListTile(
+                            title: Text(stock.companyName,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            subtitle: Text('₹${stock.currentPrice}'),
+                            trailing: Text(
+                              '${isPositive ? '+' : ''}${stock.changePercent}%',
+                              style: TextStyle(
+                                color: isPositive
+                                    ? Colors.green
+                                    : Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
+<<<<<<< HEAD
                           const SizedBox(height: 4),
                           const Text(
                             'StockSense',
@@ -159,31 +192,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ],
+=======
+                        ),
+                      );
+                    },
+>>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
                   ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMarketStatus() {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
+                ),
         ],
       ),
+<<<<<<< HEAD
       child: Row(
         children: [
           const Icon(Icons.access_time, color: Color(0xFF2E7D32), size: 18),
@@ -487,32 +505,22 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       child: BottomNavigationBar(
+=======
+      bottomNavigationBar: BottomNavigationBar(
+>>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
         currentIndex: _selectedIndex,
         onTap: _onTabTapped,
-        selectedItemColor: const Color(0xFF1B5E20),
-        unselectedItemColor: Colors.grey.shade400,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w600, fontSize: 11),
+        selectedItemColor: Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home'),
+              icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.search_outlined),
-              activeIcon: Icon(Icons.search),
-              label: 'Search'),
+              icon: Icon(Icons.search), label: 'Search'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark_outline),
-              activeIcon: Icon(Icons.bookmark),
-              label: 'Watchlist'),
+              icon: Icon(Icons.bookmark), label: 'Watchlist'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Alerts'),
+              icon: Icon(Icons.notifications), label: 'Alerts'),
         ],
       ),
     );

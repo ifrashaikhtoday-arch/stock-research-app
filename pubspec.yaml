@@ -10,8 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
+  shared_preferences: ^2.2.2
+  flutter_colorpicker: ^1.0.3
   http: ^1.2.1
   fl_chart: ^0.68.0
+<<<<<<< HEAD
   share_plus: ^13.1.0
 
   # Firebase
@@ -20,6 +23,9 @@ dependencies:
   cloud_firestore: ^5.4.3
   firebase_messaging: ^15.1.3
   image_picker: ^1.2.2
+=======
+  provider: ^6.1.2
+>>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
 
 dev_dependencies:
   flutter_test:
