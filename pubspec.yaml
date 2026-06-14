@@ -12,11 +12,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.2.1
   fl_chart: ^0.68.0
-<<<<<<< HEAD
-  share_plus: 13.1.0
-=======
   share_plus: ^13.1.0
->>>>>>> fe5b62baef5143683683a80cc84ba3c33174bbec
 
   # Firebase
   firebase_core: ^3.6.0
