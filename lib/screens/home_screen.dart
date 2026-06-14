@@ -1,18 +1,9 @@
-<<<<<<< HEAD
-import 'search_screen.dart';
-=======
-import 'compare_screen.dart';
-
->>>>>>> 0bfbefb (connected firebase login to app)
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';
-<<<<<<< HEAD
 import 'search_screen.dart';
 import 'watchlist_screen.dart';
-import 'profile_screen.dart';
-=======
->>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
+import 'compare_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,20 +13,18 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
-void _onTabTapped(int index) {
-  if (index == 1) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SearchScreen()),
-    );
-  } else {
-    setState(() => _selectedIndex = index);
-  }
-}
   final StockService _stockService = StockService();
   List<StockData> _stocks = [];
   bool _isLoading = true;
+
+  final List<Map<String, String>> _topStocks = [
+    {'name': 'Reliance', 'symbol': 'RELIANCE.NS'},
+    {'name': 'TCS', 'symbol': 'TCS.NS'},
+    {'name': 'Infosys', 'symbol': 'INFY.NS'},
+    {'name': 'HDFC Bank', 'symbol': 'HDFCBANK.NS'},
+    {'name': 'Wipro', 'symbol': 'WIPRO.NS'},
+    {'name': 'SBI', 'symbol': 'SBIN.NS'},
+  ];
 
   @override
   void initState() {
@@ -45,11 +34,9 @@ void _onTabTapped(int index) {
 
   Future<void> _loadStocks() async {
     try {
-      final stocks = await _stockService.getWatchlistData([
-        'RELIANCE.NS',
-        'TCS.NS',
-        'INFY.NS',
-      ]);
+      final stocks = await _stockService.getWatchlistData(
+        _topStocks.map((s) => s['symbol']!).toList(),
+      );
       setState(() {
         _stocks = stocks;
         _isLoading = false;
@@ -59,7 +46,6 @@ void _onTabTapped(int index) {
     }
   }
 
-<<<<<<< HEAD
   void _onTabTapped(int index) {
     if (index == 1) {
       Navigator.push(context,
@@ -67,9 +53,6 @@ void _onTabTapped(int index) {
     } else if (index == 2) {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const WatchlistScreen()));
-    } else if (index == 3) {
-      Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const ProfileScreen()));
     } else {
       setState(() => _selectedIndex = index);
     }
@@ -93,81 +76,57 @@ void _onTabTapped(int index) {
     return '🟢 Market Open';
   }
 
-=======
->>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-  title: const Text('StockSense'),
-  backgroundColor: Theme.of(context).colorScheme.primary,
-  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-),
+      backgroundColor: const Color(0xFFF5F7FA),
+      body: CustomScrollView(
+        slivers: [
+          _buildHeader(),
+          SliverToBoxAdapter(child: _buildMarketStatus()),
+          SliverToBoxAdapter(child: _buildSearchBar()),
+          SliverToBoxAdapter(child: _buildSectionTitle('Top Stocks')),
+          SliverToBoxAdapter(child: _buildStockList()),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNav(),
+    );
+  }
 
-        
-      
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search stocks...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+  Widget _buildHeader() {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      backgroundColor: const Color(0xFF1B5E20),
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
             ),
           ),
-          const Padding(
-            padding: EdgeInsets.all(12.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text('My Watchlist',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          _isLoading
-              ? const CircularProgressIndicator()
-              : Expanded(
-                  child: ListView.builder(
-                    itemCount: _stocks.length,
-                    itemBuilder: (context, index) {
-                      final stock = _stocks[index];
-                      final isPositive = stock.changePercent >= 0;
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => StockDetailScreen(
-                                symbol: stock.symbol,
-                                companyName: stock.companyName,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Card(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          child: ListTile(
-                            title: Text(stock.companyName,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                            subtitle: Text('₹${stock.currentPrice}'),
-                            trailing: Text(
-                              '${isPositive ? '+' : ''}${stock.changePercent}%',
-                              style: TextStyle(
-                                color: isPositive
-                                    ? Colors.green
-                                    : Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getGreeting() + ' 👋',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
                             ),
                           ),
-<<<<<<< HEAD
                           const SizedBox(height: 4),
                           const Text(
                             'StockSense',
@@ -179,53 +138,52 @@ void _onTabTapped(int index) {
                           ),
                         ],
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProfileScreen(),
-                          ),
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: Colors.white24,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.person, color: Colors.white),
-                        ),
+                        child: const Icon(Icons.person, color: Colors.white),
                       ),
                     ],
-=======
-                        ),
-                      );
-                    },
->>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
                   ),
-                ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarketStatus() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
-<<<<<<< HEAD
       child: Row(
         children: [
           const Icon(Icons.access_time, color: Color(0xFF2E7D32), size: 18),
           const SizedBox(width: 8),
           Text(
             _getMarketStatus(),
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           ),
           const Spacer(),
-          Text(
-            'NSE • BSE',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-            ),
-          ),
+          Text('NSE • BSE',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
         ],
       ),
     );
@@ -253,13 +211,8 @@ void _onTabTapped(int index) {
           children: [
             Icon(Icons.search, color: Colors.grey.shade400, size: 20),
             const SizedBox(width: 10),
-            Text(
-              'Search stocks, companies...',
-              style: TextStyle(
-                color: Colors.grey.shade400,
-                fontSize: 14,
-              ),
-            ),
+            Text('Search stocks, companies...',
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 14)),
           ],
         ),
       ),
@@ -272,21 +225,19 @@ void _onTabTapped(int index) {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          Text(
-            'See all',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.green.shade700,
-              fontWeight: FontWeight.w600,
-            ),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A))),
+          GestureDetector(
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const CompareScreen())),
+            child: Text('Compare ⇄',
+                style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.green.shade700,
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -299,7 +250,6 @@ void _onTabTapped(int index) {
         children: List.generate(4, (index) => _buildSkeletonCard()),
       );
     }
-
     return Column(
       children: _stocks.map((stock) => _buildStockCard(stock)).toList(),
     );
@@ -314,44 +264,37 @@ void _onTabTapped(int index) {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12))),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  height: 14,
-                  width: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+                    height: 14,
+                    width: 120,
+                    decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4))),
                 const SizedBox(height: 8),
                 Container(
-                  height: 12,
-                  width: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+                    height: 12,
+                    width: 80,
+                    decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(4))),
               ],
             ),
           ),
@@ -359,22 +302,18 @@ void _onTabTapped(int index) {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                height: 14,
-                width: 70,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+                  height: 14,
+                  width: 70,
+                  decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(4))),
               const SizedBox(height: 8),
               Container(
-                height: 24,
-                width: 55,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
+                  height: 24,
+                  width: 55,
+                  decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(6))),
             ],
           ),
         ],
@@ -384,11 +323,10 @@ void _onTabTapped(int index) {
 
   Widget _buildStockCard(StockData stock) {
     final isPositive = stock.changePercent >= 0;
-    final color = isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
-    final bgColor = isPositive
-        ? const Color(0xFFE8F5E9)
-        : const Color(0xFFFFEBEE);
-
+    final color =
+        isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
+    final bgColor =
+        isPositive ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
     final symbol = stock.symbol.replaceAll('.NS', '');
 
     return GestureDetector(
@@ -409,10 +347,9 @@ void _onTabTapped(int index) {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2)),
           ],
         ),
         child: Row(
@@ -428,10 +365,9 @@ void _onTabTapped(int index) {
                 child: Text(
                   symbol.substring(0, symbol.length.clamp(0, 3)),
                   style: const TextStyle(
-                    color: Color(0xFF1B5E20),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                  ),
+                      color: Color(0xFF1B5E20),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11),
                 ),
               ),
             ),
@@ -440,53 +376,41 @@ void _onTabTapped(int index) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    stock.companyName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(stock.companyName,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Color(0xFF1A1A1A)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
-                  Text(
-                    symbol,
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 12,
-                    ),
-                  ),
+                  Text(symbol,
+                      style: TextStyle(
+                          color: Colors.grey.shade500, fontSize: 12)),
                 ],
               ),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '₹${stock.currentPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
+                Text('₹${stock.currentPrice.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: Color(0xFF1A1A1A))),
                 const SizedBox(height: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(6)),
                   child: Text(
                     '${isPositive ? '+' : ''}${stock.changePercent.toStringAsFixed(2)}%',
                     style: TextStyle(
-                      color: color,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        color: color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -503,29 +427,38 @@ void _onTabTapped(int index) {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4)),
         ],
       ),
       child: BottomNavigationBar(
-=======
-      bottomNavigationBar: BottomNavigationBar(
->>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
         currentIndex: _selectedIndex,
         onTap: _onTabTapped,
-        selectedItemColor: Theme.of(context).colorScheme.primary,
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: const Color(0xFF1B5E20),
+        unselectedItemColor: Colors.grey.shade400,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        type: BottomNavigationBarType.fixed,
+        selectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home), label: 'Home'),
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.search), label: 'Search'),
+              icon: Icon(Icons.search_outlined),
+              activeIcon: Icon(Icons.search),
+              label: 'Search'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.bookmark), label: 'Watchlist'),
+              icon: Icon(Icons.bookmark_outline),
+              activeIcon: Icon(Icons.bookmark),
+              label: 'Watchlist'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.notifications), label: 'Alerts'),
+              icon: Icon(Icons.notifications_outlined),
+              activeIcon: Icon(Icons.notifications),
+              label: 'Alerts'),
         ],
       ),
     );
