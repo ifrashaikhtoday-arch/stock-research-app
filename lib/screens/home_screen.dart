@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 import 'search_screen.dart';
+=======
+import 'compare_screen.dart';
+
+>>>>>>> 0bfbefb (connected firebase login to app)
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';

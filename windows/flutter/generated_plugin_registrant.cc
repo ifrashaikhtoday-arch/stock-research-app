@@ -6,9 +6,7 @@
 
 #include "generated_plugin_registrant.h"
 
-<<<<<<< HEAD
 #include <cloud_firestore/cloud_firestore_plugin_c_api.h>
-#include <file_selector_windows/file_selector_windows.h>
 #include <firebase_auth/firebase_auth_plugin_c_api.h>
 #include <firebase_core/firebase_core_plugin_c_api.h>
 #include <share_plus/share_plus_windows_plugin_c_api.h>
@@ -17,8 +15,6 @@
 void RegisterPlugins(flutter::PluginRegistry* registry) {
   CloudFirestorePluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("CloudFirestorePluginCApi"));
-  FileSelectorWindowsRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("FileSelectorWindows"));
   FirebaseAuthPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FirebaseAuthPluginCApi"));
   FirebaseCorePluginCApiRegisterWithRegistrar(
@@ -27,8 +23,4 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("SharePlusWindowsPluginCApi"));
   UrlLauncherWindowsRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("UrlLauncherWindows"));
-=======
-
-void RegisterPlugins(flutter::PluginRegistry* registry) {
->>>>>>> 6b57c735ad8e418d013a11977c4363f8d8aaccce
 }
