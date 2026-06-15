@@ -64,7 +64,7 @@ class _MainScreenState extends State<MainScreen> {
     final screens = [
       const HomeScreen(),
       const WatchlistScreen(),
-      const NewsScreen(),
+            NewsScreen(),
       const SearchScreen(),
       SettingsScreen(onThemeChanged: widget.onThemeChanged),
     ];

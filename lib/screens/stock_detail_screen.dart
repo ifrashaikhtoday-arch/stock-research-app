@@ -110,7 +110,8 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
         'Support: ${formatRupee(_levels['support'] ?? 0)}\n'
         'Resistance: ${formatRupee(_levels['resistance'] ?? 0)}\n\n'
         'Checked on StockSense app 📊';
-    Share.share(text);
+       Share.share(text); 
+      
   }
 
   @override
