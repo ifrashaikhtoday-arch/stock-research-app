@@ -4,6 +4,7 @@ import 'stock_detail_screen.dart';
 import 'search_screen.dart';
 import 'watchlist_screen.dart';
 import 'compare_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -37,12 +38,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final stocks = await _stockService.getWatchlistData(
         _topStocks.map((s) => s['symbol']!).toList(),
       );
-      setState(() {
-        _stocks = stocks;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _stocks = stocks;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -53,6 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (index == 2) {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const WatchlistScreen()));
+    } else if (index == 3) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()));
     } else {
       setState(() => _selectedIndex = index);
     }
@@ -138,14 +144,23 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(12),
+                      // Profile icon — opens profile screen
+                      GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileScreen(),
+                          ),
                         ),
-                        child: const Icon(Icons.person, color: Colors.white),
+                        child: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.person, color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
