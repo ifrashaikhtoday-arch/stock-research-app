@@ -19,23 +19,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   static const Color primaryGreen = Color(0xFF1B5E20);
   static const Color bgColor = Color(0xFFF5F7FA);
 
-  // Current page index (0, 1, 2)
   int _currentPage = 0;
   final PageController _pageController = PageController();
 
-  // Page 1 — Profile setup
+  // Page 1
   final TextEditingController _nameController = TextEditingController();
   File? _profileImage;
   bool _isLoadingPage1 = false;
 
-  // Page 2 — Sector interests
+  // Page 2
   final List<String> _allSectors = [
     'IT', 'Banking', 'Auto', 'Pharma', 'Energy', 'FMCG'
   ];
   final List<String> _selectedSectors = [];
   bool _isLoadingPage2 = false;
 
-  // Page 3 — Experience level
+  // Page 3
   String? _selectedExperience;
   bool _isLoadingPage3 = false;
 
@@ -53,16 +52,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  // Pick profile photo from gallery
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() => _profileImage = File(picked.path));
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        setState(() => _profileImage = File(picked.path));
+      }
+    } catch (e) {
+      _showError('Photo picker not supported on this device');
     }
   }
 
-  // Save page 1 data and go to page 2
   Future<void> _savePage1() async {
     if (_nameController.text.trim().isEmpty) {
       _showError('Please enter your name');
@@ -71,6 +72,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     setState(() => _isLoadingPage1 = true);
 
+    // Try to save to Firestore but don't block if it fails
     try {
       final uid = _auth.currentUser!.uid;
       await _db.collection('users').doc(uid).set({
@@ -78,19 +80,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         'onboardingStep': 1,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
     } catch (e) {
-      _showError('Something went wrong. Please try again.');
+      print('Firestore error on page 1: $e');
     }
 
     setState(() => _isLoadingPage1 = false);
+
+    // Always move to next page
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
   }
 
-  // Save page 2 data and go to page 3
   Future<void> _savePage2() async {
     if (_selectedSectors.isEmpty) {
       _showError('Please select at least one sector');
@@ -99,6 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     setState(() => _isLoadingPage2 = true);
 
+    // Try to save to Firestore but don't block if it fails
     try {
       final uid = _auth.currentUser!.uid;
       await _db.collection('users').doc(uid).set({
@@ -106,19 +109,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         'onboardingStep': 2,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeInOut,
-      );
     } catch (e) {
-      _showError('Something went wrong. Please try again.');
+      print('Firestore error on page 2: $e');
     }
 
     setState(() => _isLoadingPage2 = false);
+
+    // Always move to next page
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
   }
 
-  // Save page 3 data and go to HomeScreen
   Future<void> _savePage3() async {
     if (_selectedExperience == null) {
       _showError('Please select your experience level');
@@ -127,26 +130,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     setState(() => _isLoadingPage3 = true);
 
+    // Try to save to Firestore but don't block if it fails
     try {
       final uid = _auth.currentUser!.uid;
       await _db.collection('users').doc(uid).set({
         'experience': _selectedExperience,
-        'onboardingComplete': true, // marks onboarding as done
+        'onboardingComplete': true,
         'onboardingStep': 3,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
     } catch (e) {
-      _showError('Something went wrong. Please try again.');
+      print('Firestore error on page 3: $e');
     }
 
     setState(() => _isLoadingPage3 = false);
+
+    // Always go to home screen
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    }
   }
 
   void _showError(String message) {
@@ -166,14 +171,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Progress bar at top
             _buildProgressBar(),
-
-            // Pages
             Expanded(
               child: PageView(
                 controller: _pageController,
-                physics: const NeverScrollableScrollPhysics(), // disable swipe
+                physics: const NeverScrollableScrollPhysics(),
                 onPageChanged: (index) =>
                     setState(() => _currentPage = index),
                 children: [
@@ -189,7 +191,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // Progress bar showing which step user is on
   Widget _buildProgressBar() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
@@ -222,8 +223,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 30),
-
-          // Title
           const Text(
             'What should we\ncall you?',
             style: TextStyle(
@@ -233,14 +232,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               height: 1.2,
             ),
           ),
-
           const SizedBox(height: 8),
-
           Text(
             'Set up your profile to get started',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
-
           const SizedBox(height: 40),
 
           // Profile photo picker
@@ -256,11 +252,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ? FileImage(_profileImage!)
                         : null,
                     child: _profileImage == null
-                        ? const Icon(
-                            Icons.person,
-                            size: 55,
-                            color: primaryGreen,
-                          )
+                        ? const Icon(Icons.person, size: 55, color: primaryGreen)
                         : null,
                   ),
                   Positioned(
@@ -272,11 +264,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         color: primaryGreen,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      child: const Icon(Icons.camera_alt,
+                          color: Colors.white, size: 16),
                     ),
                   ),
                 ],
@@ -285,14 +274,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
 
           const SizedBox(height: 8),
-
           const Center(
             child: Text(
               'Tap to add photo (optional)',
               style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
           ),
-
           const SizedBox(height: 32),
 
           // Name field
@@ -302,15 +289,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             decoration: InputDecoration(
               labelText: 'Your name',
               hintText: 'e.g. Daniya',
-              prefixIcon:
-                  const Icon(Icons.person_outline, color: primaryGreen),
+              prefixIcon: const Icon(Icons.person_outline, color: primaryGreen),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: primaryGreen, width: 2),
+                borderSide: const BorderSide(color: primaryGreen, width: 2),
               ),
             ),
           ),
@@ -354,7 +339,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 30),
-
           const Text(
             'What sectors\ninterest you?',
             style: TextStyle(
@@ -364,14 +348,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               height: 1.2,
             ),
           ),
-
           const SizedBox(height: 8),
-
           Text(
             'Select all that apply — we will personalize your feed',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
-
           const SizedBox(height: 40),
 
           // Sector chips
@@ -397,8 +378,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     color: isSelected ? primaryGreen : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color:
-                          isSelected ? primaryGreen : Colors.grey.shade300,
+                      color: isSelected ? primaryGreen : Colors.grey.shade300,
                       width: 1.5,
                     ),
                     boxShadow: [
@@ -461,7 +441,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 30),
-
           const Text(
             'How long have you\nbeen investing?',
             style: TextStyle(
@@ -471,17 +450,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               height: 1.2,
             ),
           ),
-
           const SizedBox(height: 8),
-
           Text(
             'This helps us show the right content for you',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
           ),
-
           const SizedBox(height: 40),
 
-          // Experience option cards
+          // Experience cards
           ..._experienceOptions.map((option) {
             final isSelected = _selectedExperience == option['title'];
             return GestureDetector(
@@ -509,10 +485,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
                 child: Row(
                   children: [
-                    Text(
-                      option['icon']!,
-                      style: const TextStyle(fontSize: 28),
-                    ),
+                    Text(option['icon']!,
+                        style: const TextStyle(fontSize: 28)),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Column(
@@ -532,9 +506,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Text(
                             option['subtitle']!,
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade500,
-                            ),
+                                fontSize: 12, color: Colors.grey.shade500),
                           ),
                         ],
                       ),
@@ -572,6 +544,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
             ),
           ),
+          const SizedBox(height: 30),
         ],
       ),
     );
