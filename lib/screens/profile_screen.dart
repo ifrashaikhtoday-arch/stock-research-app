@@ -32,15 +32,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    final snapshot = await _db
-        .collection('users')
-        .doc(uid)
-        .collection('watchlist')
-        .get();
+   final snapshot = await _db
+    .collection('users')
+    .doc(uid)
+    .collection('watchlist')
+    .get();
 
-    setState(() {
-      _watchlistCount = snapshot.docs.length;
-    });
+if (mounted) {
+  setState(() {
+    _watchlistCount = snapshot.docs.length;
+  });
+}
   }
 
   // Get the first letter of the user's email for the avatar

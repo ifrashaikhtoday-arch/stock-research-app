@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../auth_service.dart';
+import 'onboarding_screen.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _isSignUpMode = false; // toggle between login and signup
+  bool _isSignUpMode = false;
   String? _errorMessage;
 
   static const Color primaryGreen = Color(0xFF2E7D32);
@@ -31,7 +33,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Switch between Login and Sign Up mode
   void _toggleMode() {
     setState(() {
       _isSignUpMode = !_isSignUpMode;
@@ -64,7 +65,22 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (error == null && mounted) {
-      Navigator.pushReplacementNamed(context, '/home');
+      // Check if onboarding is done
+      final onboardingDone = await _authService.hasCompletedOnboarding();
+      if (mounted) {
+        if (onboardingDone) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const OnboardingScreen()),
+          );
+        }
+      }
     }
   }
 
@@ -101,7 +117,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (error == null && mounted) {
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) => const OnboardingScreen()),
+      );
     }
   }
 
@@ -133,7 +153,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 20),
 
-                // App name
                 const Text(
                   'StockSense',
                   style: TextStyle(
@@ -151,7 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 30),
 
-                // Login / Sign Up toggle tabs
+                // Login / Sign Up toggle
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.grey.shade200,
@@ -159,14 +178,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: Row(
                     children: [
-                      // Login tab
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
                             if (_isSignUpMode) _toggleMode();
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: !_isSignUpMode
                                   ? primaryGreen
@@ -186,14 +205,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      // Sign Up tab
                       Expanded(
                         child: GestureDetector(
                           onTap: () {
                             if (!_isSignUpMode) _toggleMode();
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
                               color: _isSignUpMode
                                   ? primaryGreen
@@ -246,8 +265,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   obscureText: _obscurePassword,
                   decoration: InputDecoration(
                     labelText: 'Password',
-                    prefixIcon:
-                        const Icon(Icons.lock_outline, color: primaryGreen),
+                    prefixIcon: const Icon(Icons.lock_outline,
+                        color: primaryGreen),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
@@ -269,7 +288,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // Confirm password field (only in sign up mode)
                 if (_isSignUpMode) ...[
                   const SizedBox(height: 16),
                   TextField(
@@ -295,8 +313,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            const BorderSide(color: primaryGreen, width: 2),
+                        borderSide: const BorderSide(
+                            color: primaryGreen, width: 2),
                       ),
                     ),
                   ),
@@ -331,14 +349,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 24),
 
-                // Main action button
+                // Main button
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
                     onPressed: _isLoading
                         ? null
-                        : (_isSignUpMode ? _handleSignUp : _handleLogin),
+                        : (_isSignUpMode
+                            ? _handleSignUp
+                            : _handleLogin),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: primaryGreen,
                       foregroundColor: Colors.white,
@@ -358,7 +378,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         : Text(
                             _isSignUpMode ? 'Create Account' : 'Log In',
                             style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold),
                           ),
                   ),
                 ),
