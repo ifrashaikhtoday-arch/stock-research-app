@@ -1,5 +1,5 @@
 import 'compare_screen.dart';
-
+import 'portfolio_screen.dart';
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';
