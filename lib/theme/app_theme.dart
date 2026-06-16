@@ -15,7 +15,7 @@ class AppColors {
 
 /// Holds the currently selected theme mode and notifies the rest of the
 /// app whenever it changes, so widgets rebuild with the new theme.
-class ThemeNotifier extends ChangeNotifier {
+class ThemeNotifier extends ChangeNotifier { 
   AppThemeMode _mode = AppThemeMode.green; // Green theme is the default.
 
   AppThemeMode get mode => _mode;
