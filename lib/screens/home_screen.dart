@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';
 import 'search_screen.dart';
@@ -7,6 +9,7 @@ import 'compare_screen.dart';
 import 'portfolio_screen.dart';
 import 'news_screen.dart';
 import 'settings_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final StockService _stockService = StockService();
   List<StockData> _stocks = [];
   bool _isLoading = true;
+  String _userName = '';
 
   final List<Map<String, String>> _topStocks = [
     {'name': 'Reliance', 'symbol': 'RELIANCE.NS'},
@@ -33,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadStocks();
+    _loadUserName();
   }
 
   Future<void> _loadStocks() async {
@@ -48,6 +53,24 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     } catch (e) {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
+      if (mounted) {
+        setState(() {
+          _userName = doc.data()?['name'] ?? '';
+        });
+      }
+    } catch (e) {
+      print('Error loading name: $e');
     }
   }
 
@@ -82,7 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final minute = now.minute;
     final weekday = now.weekday;
     if (weekday == 6 || weekday == 7) return 'Market Closed';
-    if (hour < 9 || (hour == 9 && minute < 15)) return 'Market Opens at 9:15 AM';
+    if (hour < 9 || (hour == 9 && minute < 15))
+      return 'Market Opens at 9:15 AM';
     if (hour > 15 || (hour == 15 && minute > 30)) return 'Market Closed';
     return '🟢 Market Open';
   }
@@ -126,7 +150,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -134,7 +159,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${_getGreeting()} 👋',
+                        _userName.isNotEmpty
+                            ? '${_getGreeting()}, $_userName 👋'
+                            : '${_getGreeting()} 👋',
                         style: TextStyle(
                           color: theme.colorScheme.onPrimary.withOpacity(0.8),
                           fontSize: 14,
@@ -151,17 +178,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
+                  // Profile icon
                   GestureDetector(
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const PortfolioScreen()),
+                          builder: (context) => const ProfileScreen()),
                     ),
                     child: Container(
                       width: 42,
                       height: 42,
                       decoration: BoxDecoration(
-                        color: theme.colorScheme.onPrimary.withOpacity(0.2),
+                        color:
+                            theme.colorScheme.onPrimary.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(Icons.person,
@@ -238,7 +267,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 10),
             Text('Search stocks, companies...',
                 style: TextStyle(
-                    color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 14)),
           ],
         ),
       ),
@@ -306,7 +336,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface)),
           GestureDetector(
-            onTap: () => Navigator.push(context,
+            onTap: () => Navigator.push(
+                context,
                 MaterialPageRoute(
                     builder: (context) => const CompareScreen())),
             child: Text('Compare ⇄',
@@ -327,7 +358,8 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     }
     return Column(
-      children: _stocks.map((stock) => _buildStockCard(stock, theme)).toList(),
+      children:
+          _stocks.map((stock) => _buildStockCard(stock, theme)).toList(),
     );
   }
 
@@ -399,8 +431,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStockCard(StockData stock, ThemeData theme) {
     final isPositive = stock.changePercent >= 0;
-    final color = isPositive ? Colors.green.shade700 : Colors.red.shade700;
-    final bgColor = isPositive ? Colors.green.shade50 : Colors.red.shade50;
+    final color =
+        isPositive ? Colors.green.shade700 : Colors.red.shade700;
+    final bgColor =
+        isPositive ? Colors.green.shade50 : Colors.red.shade50;
     final symbol = stock.symbol.replaceAll('.NS', '');
 
     return GestureDetector(
