@@ -1,10 +1,12 @@
-import 'compare_screen.dart';
-import 'portfolio_screen.dart';
 import 'package:flutter/material.dart';
 import '../data/stock_service.dart';
 import 'stock_detail_screen.dart';
 import 'search_screen.dart';
 import 'watchlist_screen.dart';
+import 'compare_screen.dart';
+import 'portfolio_screen.dart';
+import 'news_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -38,12 +40,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final stocks = await _stockService.getWatchlistData(
         _topStocks.map((s) => s['symbol']!).toList(),
       );
-      setState(() {
-        _stocks = stocks;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _stocks = stocks;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -54,6 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (index == 2) {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const WatchlistScreen()));
+    } else if (index == 3) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => NewsScreen()));
+    } else if (index == 4) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const SettingsScreen()));
     } else {
       setState(() => _selectedIndex = index);
     }
@@ -79,76 +89,84 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
       body: CustomScrollView(
         slivers: [
-          _buildHeader(),
-          SliverToBoxAdapter(child: _buildMarketStatus()),
-          SliverToBoxAdapter(child: _buildSearchBar()),
-          SliverToBoxAdapter(child: _buildSectionTitle('Top Stocks')),
-          SliverToBoxAdapter(child: _buildStockList()),
+          _buildHeader(theme),
+          SliverToBoxAdapter(child: _buildMarketStatus(theme)),
+          SliverToBoxAdapter(child: _buildSearchBar(theme)),
+          SliverToBoxAdapter(child: _buildPortfolioCard(theme)),
+          SliverToBoxAdapter(child: _buildSectionTitle(theme)),
+          SliverToBoxAdapter(child: _buildStockList(theme)),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(theme),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ThemeData theme) {
     return SliverAppBar(
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF1B5E20),
+      backgroundColor: theme.colorScheme.primary,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.primaryContainer,
+              ],
             ),
           ),
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _getGreeting() + ' 👋',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'StockSense',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          color: Colors.white24,
-                          borderRadius: BorderRadius.circular(12),
+                      Text(
+                        '${_getGreeting()} 👋',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary.withOpacity(0.8),
+                          fontSize: 14,
                         ),
-                        child: const Icon(Icons.person, color: Colors.white),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'StockSense',
+                        style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
+                  ),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const PortfolioScreen()),
+                    ),
+                    child: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onPrimary.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.person,
+                          color: theme.colorScheme.onPrimary),
+                    ),
                   ),
                 ],
               ),
@@ -159,12 +177,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMarketStatus() {
+  Widget _buildMarketStatus(ThemeData theme) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -176,29 +194,26 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.access_time, color: Color(0xFF2E7D32), size: 18),
+          Icon(Icons.access_time,
+              color: theme.colorScheme.primary, size: 18),
           const SizedBox(width: 8),
           Text(
             _getMarketStatus(),
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: theme.colorScheme.onSurface),
           ),
           const Spacer(),
-          Text(
-            'NSE • BSE',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-            ),
-          ),
+          Text('NSE • BSE',
+              style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
         ],
       ),
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(ThemeData theme) {
     return GestureDetector(
       onTap: () => Navigator.push(context,
           MaterialPageRoute(builder: (context) => const SearchScreen())),
@@ -206,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -218,114 +233,144 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.search, color: Colors.grey.shade400, size: 20),
+            Icon(Icons.search,
+                color: theme.colorScheme.onSurfaceVariant, size: 20),
             const SizedBox(width: 10),
-            Text(
-              'Search stocks, companies...',
-              style: TextStyle(
-                color: Colors.grey.shade400,
-                fontSize: 14,
-              ),
-            ),
+            Text('Search stocks, companies...',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildPortfolioCard(ThemeData theme) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const PortfolioScreen())),
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.pie_chart,
+                color: theme.colorScheme.onPrimaryContainer, size: 28),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('My Portfolio',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: theme.colorScheme.onPrimaryContainer)),
+                  const SizedBox(height: 2),
+                  Text('Track your investments',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onPrimaryContainer
+                              .withOpacity(0.7))),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_ios,
+                color: theme.colorScheme.onPrimaryContainer, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const CompareScreen()),
-            ),
-            child: Text(
-              'Compare ⇄',
+          Text('Top Stocks',
               style: TextStyle(
-                fontSize: 13,
-                color: Colors.green.shade700,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface)),
+          GestureDetector(
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(
+                    builder: (context) => const CompareScreen())),
+            child: Text('Compare ⇄',
+                style: TextStyle(
+                    fontSize: 13,
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStockList() {
+  Widget _buildStockList(ThemeData theme) {
     if (_isLoading) {
       return Column(
-        children: List.generate(4, (index) => _buildSkeletonCard()),
+        children: List.generate(4, (index) => _buildSkeletonCard(theme)),
       );
     }
-
     return Column(
-      children: _stocks.map((stock) => _buildStockCard(stock)).toList(),
+      children: _stocks.map((stock) => _buildStockCard(stock, theme)).toList(),
     );
   }
 
-  Widget _buildSkeletonCard() {
+  Widget _buildSkeletonCard(ThemeData theme) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
         ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                  color: theme.colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12))),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  height: 14,
-                  width: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+                    height: 14,
+                    width: 120,
+                    decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4))),
                 const SizedBox(height: 8),
                 Container(
-                  height: 12,
-                  width: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+                    height: 12,
+                    width: 80,
+                    decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(4))),
               ],
             ),
           ),
@@ -333,22 +378,18 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
-                height: 14,
-                width: 70,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
+                  height: 14,
+                  width: 70,
+                  decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(4))),
               const SizedBox(height: 8),
               Container(
-                height: 24,
-                width: 55,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
+                  height: 24,
+                  width: 55,
+                  decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(6))),
             ],
           ),
         ],
@@ -356,13 +397,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildStockCard(StockData stock) {
+  Widget _buildStockCard(StockData stock, ThemeData theme) {
     final isPositive = stock.changePercent >= 0;
-    final color = isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
-    final bgColor = isPositive
-        ? const Color(0xFFE8F5E9)
-        : const Color(0xFFFFEBEE);
-
+    final color = isPositive ? Colors.green.shade700 : Colors.red.shade700;
+    final bgColor = isPositive ? Colors.green.shade50 : Colors.red.shade50;
     final symbol = stock.symbol.replaceAll('.NS', '');
 
     return GestureDetector(
@@ -379,91 +417,75 @@ class _HomeScreenState extends State<HomeScreen> {
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2)),
           ],
         ),
         child: Row(
           children: [
-            // Stock avatar
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF1B5E20).withOpacity(0.1),
+                color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
                 child: Text(
                   symbol.substring(0, symbol.length.clamp(0, 3)),
-                  style: const TextStyle(
-                    color: Color(0xFF1B5E20),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11),
                 ),
               ),
             ),
             const SizedBox(width: 12),
-            // Name and symbol
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    stock.companyName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                      color: Color(0xFF1A1A1A),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  Text(stock.companyName,
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: theme.colorScheme.onSurface),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
-                  Text(
-                    symbol,
-                    style: TextStyle(
-                      color: Colors.grey.shade500,
-                      fontSize: 12,
-                    ),
-                  ),
+                  Text(symbol,
+                      style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12)),
                 ],
               ),
             ),
-            // Price and change
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '₹${stock.currentPrice.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
+                Text('₹${stock.currentPrice.toStringAsFixed(2)}',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: theme.colorScheme.onSurface)),
                 const SizedBox(height: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: bgColor,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                      color: bgColor,
+                      borderRadius: BorderRadius.circular(6)),
                   child: Text(
                     '${isPositive ? '+' : ''}${stock.changePercent.toStringAsFixed(2)}%',
                     style: TextStyle(
-                      color: color,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+                        color: color,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -474,28 +496,27 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -4)),
         ],
       ),
       child: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onTabTapped,
-        selectedItemColor: const Color(0xFF1B5E20),
-        unselectedItemColor: Colors.grey.shade400,
+        selectedItemColor: theme.colorScheme.primary,
+        unselectedItemColor: theme.colorScheme.onSurfaceVariant,
         backgroundColor: Colors.transparent,
         elevation: 0,
         type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: const TextStyle(
-            fontWeight: FontWeight.w600, fontSize: 11),
+        selectedLabelStyle:
+            const TextStyle(fontWeight: FontWeight.w600, fontSize: 11),
         items: const [
           BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
@@ -510,9 +531,13 @@ class _HomeScreenState extends State<HomeScreen> {
               activeIcon: Icon(Icons.bookmark),
               label: 'Watchlist'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Alerts'),
+              icon: Icon(Icons.newspaper_outlined),
+              activeIcon: Icon(Icons.newspaper),
+              label: 'News'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings),
+              label: 'Settings'),
         ],
       ),
     );
