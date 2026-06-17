@@ -16,9 +16,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  static const Color primaryGreen = Color(0xFF1B5E20);
-  static const Color bgColor = Color(0xFFF5F7FA);
-
   bool _notificationsEnabled = true;
   bool _isLoading = false;
   int _watchlistCount = 0;
@@ -116,7 +113,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  void _showLogoutDialog() {
+  void _showLogoutDialog(ThemeData theme) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -133,8 +130,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _handleLogout();
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: primaryGreen,
-              foregroundColor: Colors.white,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
             ),
             child: const Text('Logout'),
           ),
@@ -143,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showChangePasswordDialog() {
+  void _showChangePasswordDialog(ThemeData theme) {
     final TextEditingController passwordController = TextEditingController();
     showDialog(
       context: context,
@@ -190,8 +187,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: primaryGreen,
-              foregroundColor: Colors.white,
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
             ),
             child: const Text('Change'),
           ),
@@ -253,61 +250,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
       appBar: AppBar(
-        title: const Text(
-          'My Profile',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: primaryGreen,
+        title: const Text('My Profile',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: theme.colorScheme.onPrimary),
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: primaryGreen))
+          ? Center(
+              child: CircularProgressIndicator(
+                  color: theme.colorScheme.primary))
           : SingleChildScrollView(
               child: Column(
                 children: [
-                  // Header
-                  _buildHeader(),
+                  _buildHeader(theme),
                   const SizedBox(height: 16),
-
-                  // Stats
-                  _buildStatsCard(),
+                  _buildStatsCard(theme),
                   const SizedBox(height: 16),
-
-                  // Notification settings
-                  _buildSettingsCard(),
+                  _buildSettingsCard(theme),
                   const SizedBox(height: 16),
-
-                  // App preferences
-                  _buildPreferencesCard(),
+                  _buildPreferencesCard(theme),
                   const SizedBox(height: 16),
-
-                  // About section
-                  _buildAboutCard(),
+                  _buildAboutCard(theme),
                   const SizedBox(height: 16),
-
-                  // Danger zone
-                  _buildDangerZoneCard(),
+                  _buildDangerZoneCard(theme),
                   const SizedBox(height: 16),
-
-                  // Logout button
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: SizedBox(
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton.icon(
-                        onPressed: _showLogoutDialog,
+                        onPressed: () => _showLogoutDialog(theme),
                         icon: const Icon(Icons.logout),
-                        label: const Text(
-                          'Logout',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        label: const Text('Logout',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red.shade600,
                           foregroundColor: Colors.white,
@@ -325,14 +308,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ThemeData theme) {
     return Container(
       width: double.infinity,
-      color: primaryGreen,
+      color: theme.colorScheme.primary,
       padding: const EdgeInsets.only(bottom: 30, top: 10),
       child: Column(
         children: [
-          // Avatar
           Stack(
             children: [
               CircleAvatar(
@@ -340,10 +322,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 backgroundColor: Colors.white,
                 child: Text(
                   _avatarLetter,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 36,
                     fontWeight: FontWeight.bold,
-                    color: primaryGreen,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
               ),
@@ -355,48 +337,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    border: Border.all(color: primaryGreen, width: 2),
+                    border: Border.all(
+                        color: theme.colorScheme.primary, width: 2),
                   ),
-                  child: const Icon(Icons.camera_alt,
-                      color: primaryGreen, size: 14),
+                  child: Icon(Icons.camera_alt,
+                      color: theme.colorScheme.primary, size: 14),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-
-          // Name
           if (_userName.isNotEmpty)
             Text(
               _userName,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: theme.colorScheme.onPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-
-          // Email
           Text(
             _userEmail,
-            style: const TextStyle(color: Colors.white70, fontSize: 14),
+            style: TextStyle(
+                color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                fontSize: 14),
           ),
           const SizedBox(height: 4),
-
-          // Member since
           Text(
             'Member since $_memberSince',
-            style: TextStyle(color: Colors.green.shade100, fontSize: 12),
+            style: TextStyle(
+                color: theme.colorScheme.onPrimary.withOpacity(0.5),
+                fontSize: 12),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatsCard() {
+  Widget _buildStatsCard(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: _buildCard(
+        theme: theme,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -404,15 +386,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   '$_watchlistCount',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: primaryGreen,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
-                const Text(
+                Text(
                   'Stocks in Watchlist',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
                 ),
               ],
             ),
@@ -422,25 +405,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsCard() {
+  Widget _buildSettingsCard(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: _buildCard(
+        theme: theme,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Notifications',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: primaryGreen,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 8),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: _buildIconBox(Icons.notifications_outlined),
+              leading: _buildIconBox(Icons.notifications_outlined, theme),
               title: const Text('Price Alerts',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               subtitle: const Text('Get notified on price changes'),
@@ -450,7 +434,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   setState(() => _notificationsEnabled = value);
                   _savePreference('notifications', value);
                 },
-                activeColor: primaryGreen,
+                activeColor: theme.colorScheme.primary,
               ),
             ),
           ],
@@ -459,27 +443,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildPreferencesCard() {
+  Widget _buildPreferencesCard(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: _buildCard(
+        theme: theme,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'App Preferences',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: primaryGreen,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 8),
-
-            // Chart type
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: _buildIconBox(Icons.show_chart),
+              leading: _buildIconBox(Icons.show_chart, theme),
               title: const Text('Default Chart',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               trailing: Row(
@@ -496,13 +479,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isSelected ? primaryGreen : Colors.grey.shade100,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         type,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.grey,
+                          color: isSelected
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurfaceVariant,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -512,13 +499,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 }).toList(),
               ),
             ),
-
             const Divider(height: 1),
-
-            // Time period
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: _buildIconBox(Icons.access_time),
+              leading: _buildIconBox(Icons.access_time, theme),
               title: const Text('Default Period',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               trailing: Row(
@@ -535,13 +519,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isSelected ? primaryGreen : Colors.grey.shade100,
+                        color: isSelected
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         period,
                         style: TextStyle(
-                          color: isSelected ? Colors.white : Colors.grey,
+                          color: isSelected
+                              ? theme.colorScheme.onPrimary
+                              : theme.colorScheme.onSurfaceVariant,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
@@ -557,39 +545,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAboutCard() {
+  Widget _buildAboutCard(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: _buildCard(
+        theme: theme,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'About',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: primaryGreen,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 8),
-
-            // App version
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: _buildIconBox(Icons.info_outline),
+              leading: _buildIconBox(Icons.info_outline, theme),
               title: const Text('App Version',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               trailing: const Text('1.0.0',
                   style: TextStyle(color: Colors.grey, fontSize: 14)),
             ),
-
             const Divider(height: 1),
-
-            // Rate us
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: _buildIconBox(Icons.star_outline),
+              leading: _buildIconBox(Icons.star_outline, theme),
               title: const Text('Rate Us',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               subtitle: const Text('Rate us on Play Store'),
@@ -602,13 +586,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               },
             ),
-
             const Divider(height: 1),
-
-            // Share app
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: _buildIconBox(Icons.share_outlined),
+              leading: _buildIconBox(Icons.share_outlined, theme),
               title: const Text('Share App',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               subtitle: const Text('Share StockSense with friends'),
@@ -620,13 +601,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 );
               },
             ),
-
             const Divider(height: 1),
-
-            // Contact support
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: _buildIconBox(Icons.email_outlined),
+              leading: _buildIconBox(Icons.email_outlined, theme),
               title: const Text('Contact Support',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               subtitle: const Text('support@stocksense.app'),
@@ -634,8 +612,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   size: 14, color: Colors.grey),
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Opening email...')),
+                  const SnackBar(content: Text('Opening email...')),
                 );
               },
             ),
@@ -645,37 +622,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDangerZoneCard() {
+  Widget _buildDangerZoneCard(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: _buildCard(
+        theme: theme,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Account',
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: primaryGreen,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 8),
-
-            // Change password
             ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: _buildIconBox(Icons.lock_outline),
+              leading: _buildIconBox(Icons.lock_outline, theme),
               title: const Text('Change Password',
                   style: TextStyle(fontWeight: FontWeight.w500)),
               trailing: const Icon(Icons.arrow_forward_ios,
                   size: 14, color: Colors.grey),
-              onTap: _showChangePasswordDialog,
+              onTap: () => _showChangePasswordDialog(theme),
             ),
-
             const Divider(height: 1),
-
-            // Delete account
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Container(
@@ -684,7 +657,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.delete_outline, color: Colors.red.shade600),
+                child:
+                    Icon(Icons.delete_outline, color: Colors.red.shade600),
               ),
               title: Text('Delete Account',
                   style: TextStyle(
@@ -701,16 +675,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildCard({required Widget child}) {
+  Widget _buildCard({required ThemeData theme, required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -720,14 +694,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildIconBox(IconData icon) {
+  Widget _buildIconBox(IconData icon, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
+        color: theme.colorScheme.primaryContainer,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(icon, color: primaryGreen),
+      child: Icon(icon, color: theme.colorScheme.onPrimaryContainer),
     );
   }
 }
