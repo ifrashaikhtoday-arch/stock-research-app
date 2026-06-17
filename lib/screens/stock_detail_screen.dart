@@ -7,13 +7,11 @@ import '../utils.dart';
 class StockDetailScreen extends StatefulWidget {
   final String symbol;
   final String companyName;
-
   const StockDetailScreen({
     super.key,
     required this.symbol,
     required this.companyName,
   });
-
   @override
   State<StockDetailScreen> createState() => _StockDetailScreenState();
 }
@@ -87,8 +85,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                       padding: EdgeInsets.only(left: 12),
                       child: Text('UNDO',
                           style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
+                              color: Colors.white, fontWeight: FontWeight.bold)),
                     ),
                   ),
               ],
@@ -110,44 +107,46 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
         'Support: ${formatRupee(_levels['support'] ?? 0)}\n'
         'Resistance: ${formatRupee(_levels['resistance'] ?? 0)}\n\n'
         'Checked on StockSense app 📊';
-       Share.share(text); 
-      
+    Share.share(text);
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isPositive = _stockData?.changePercent != null
         ? _stockData!.changePercent >= 0
         : true;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.colorScheme.surfaceContainerLow,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B5E20),
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: Text(widget.companyName,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.share_outlined), onPressed: _shareStock),
+          IconButton(
+              icon: const Icon(Icons.share_outlined), onPressed: _shareStock),
           IconButton(
             icon: Icon(
               _isSaved ? Icons.bookmark : Icons.bookmark_add_outlined,
-              color: _isSaved ? Colors.yellow : Colors.white,
+              color: _isSaved ? Colors.yellow : theme.colorScheme.onPrimary,
             ),
             onPressed: () {
               if (_isSaved) return;
               setState(() => _isSaved = true);
               _showToast(context, '${widget.companyName} added to watchlist!',
-                  const Color(0xFF2E7D32),
+                  theme.colorScheme.primary,
                   showUndo: true);
             },
           ),
         ],
       ),
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1B5E20)))
+          ? Center(
+              child: CircularProgressIndicator(
+                  color: theme.colorScheme.primary))
           : _stockData == null
               ? const Center(child: Text('Failed to load data'))
               : SingleChildScrollView(
@@ -158,9 +157,9 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(20),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF1B5E20),
-                          borderRadius: BorderRadius.only(
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          borderRadius: const BorderRadius.only(
                             bottomLeft: Radius.circular(24),
                             bottomRight: Radius.circular(24),
                           ),
@@ -170,8 +169,8 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                           children: [
                             Text(
                               formatRupee(_stockData!.currentPrice),
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: theme.colorScheme.onPrimary,
                                 fontSize: 36,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -197,15 +196,13 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
                       // Chart section
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -220,23 +217,24 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text('Price Chart',
+                                Text('Price Chart',
                                     style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 15)),
+                                        fontSize: 15,
+                                        color: theme.colorScheme.onSurface)),
                                 Row(
                                   children: [
                                     Text('Line',
                                         style: TextStyle(
                                             fontSize: 12,
                                             color: !_isCandlestick
-                                                ? const Color(0xFF1B5E20)
+                                                ? theme.colorScheme.primary
                                                 : Colors.grey)),
                                     Switch(
                                       value: _isCandlestick,
                                       onChanged: (v) => setState(
                                           () => _isCandlestick = v),
-                                      activeColor: const Color(0xFF1B5E20),
+                                      activeColor: theme.colorScheme.primary,
                                       materialTapTargetSize:
                                           MaterialTapTargetSize.shrinkWrap,
                                     ),
@@ -244,28 +242,26 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                                         style: TextStyle(
                                             fontSize: 12,
                                             color: _isCandlestick
-                                                ? const Color(0xFF1B5E20)
+                                                ? theme.colorScheme.primary
                                                 : Colors.grey)),
                                   ],
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            _buildPeriodButtons(),
+                            _buildPeriodButtons(theme),
                             const SizedBox(height: 12),
                             _buildChart(),
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
                       // Stock details
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -278,34 +274,33 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Stock Details',
+                            Text('Stock Details',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 15)),
+                                    fontSize: 15,
+                                    color: theme.colorScheme.onSurface)),
                             const SizedBox(height: 12),
-                            _detailRow('Symbol',
+                            _detailRow(theme, 'Symbol',
                                 widget.symbol.replaceAll('.NS', '')),
-                            _divider(),
-                            _detailRow('P/E Ratio',
+                            _divider(theme),
+                            _detailRow(theme, 'P/E Ratio',
                                 _stockData!.peRatio.toStringAsFixed(2)),
-                            _divider(),
-                            _detailRow('52 Week High',
+                            _divider(theme),
+                            _detailRow(theme, '52 Week High',
                                 formatRupee(_stockData!.high52Week)),
-                            _divider(),
-                            _detailRow('52 Week Low',
+                            _divider(theme),
+                            _detailRow(theme, '52 Week Low',
                                 formatRupee(_stockData!.low52Week)),
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 16),
-
                       // Support and Resistance
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 16),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardColor,
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
@@ -318,26 +313,27 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Support & Resistance',
+                            Text('Support & Resistance',
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 15)),
+                                    fontSize: 15,
+                                    color: theme.colorScheme.onSurface)),
                             const SizedBox(height: 4),
                             Text(
                               'Key price levels based on 30 days of data',
                               style: TextStyle(
-                                  color: Colors.grey.shade500, fontSize: 12),
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontSize: 12),
                             ),
                             const SizedBox(height: 16),
-                            _supportResistanceRow(
-                                'Support', _levels['support'] ?? 0),
+                            _supportResistanceRow('Support',
+                                _levels['support'] ?? 0),
                             const SizedBox(height: 12),
-                            _supportResistanceRow(
-                                'Resistance', _levels['resistance'] ?? 0),
+                            _supportResistanceRow('Resistance',
+                                _levels['resistance'] ?? 0),
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -345,10 +341,9 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     );
   }
 
-  Widget _buildPeriodButtons() {
+  Widget _buildPeriodButtons(ThemeData theme) {
     final periods = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '3y', '5y'];
     final labels = ['1D', '5D', '1M', '3M', '6M', '1Y', '3Y', '5Y'];
-
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -363,19 +358,23 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
             },
             child: Container(
               margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? const Color(0xFF1B5E20)
-                    : Colors.grey.shade100,
+                    ? theme.colorScheme.primary
+                    : theme.colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey.shade600,
-                  fontWeight:
-                      isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.onSurfaceVariant,
+                  fontWeight: isSelected
+                      ? FontWeight.bold
+                      : FontWeight.normal,
                   fontSize: 13,
                 ),
               ),
@@ -392,14 +391,14 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
 
   Widget _buildLineChart() {
     if (_priceHistory.isEmpty) return const SizedBox(height: 150);
-
-    final spots = _priceHistory.asMap().entries
+    final spots = _priceHistory
+        .asMap()
+        .entries
         .map((e) => FlSpot(e.key.toDouble(), e.value))
         .toList();
     final minPrice = _priceHistory.reduce((a, b) => a < b ? a : b);
     final maxPrice = _priceHistory.reduce((a, b) => a > b ? a : b);
     final isUp = _priceHistory.last >= _priceHistory.first;
-
     return SizedBox(
       height: 180,
       child: LineChart(
@@ -487,12 +486,10 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
 
   Widget _buildCandlestickChart() {
     if (_candleData.isEmpty) return const SizedBox(height: 150);
-
     final minPrice =
         _candleData.map((c) => c.low).reduce((a, b) => a < b ? a : b);
     final maxPrice =
         _candleData.map((c) => c.high).reduce((a, b) => a > b ? a : b);
-
     return SizedBox(
       height: 180,
       child: CustomPaint(
@@ -508,7 +505,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     );
   }
 
-  Widget _detailRow(String label, String value) {
+  Widget _detailRow(ThemeData theme, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
@@ -516,17 +513,20 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
         children: [
           Text(label,
               style: TextStyle(
-                  fontSize: 14, color: Colors.grey.shade600)),
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurfaceVariant)),
           Text(value,
-              style: const TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w600)),
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.onSurface)),
         ],
       ),
     );
   }
 
-  Widget _divider() {
-    return Divider(color: Colors.grey.shade100, height: 1);
+  Widget _divider(ThemeData theme) {
+    return Divider(color: theme.colorScheme.outlineVariant, height: 1);
   }
 
   Widget _supportResistanceRow(String label, double value) {
@@ -537,7 +537,6 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     final bgColor = isSupport
         ? const Color(0xFFE8F5E9)
         : const Color(0xFFFFEBEE);
-
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -553,9 +552,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: color,
-                  shape: BoxShape.circle,
-                ),
+                    color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
               Text(label,
@@ -640,8 +637,7 @@ class CandlestickPainter extends CustomPainter {
           (bodyBottom - bodyTop).abs().clamp(1.0, double.infinity);
 
       canvas.drawRect(
-        Rect.fromLTWH(
-            x - candleWidth / 2 + padding, bodyTop,
+        Rect.fromLTWH(x - candleWidth / 2 + padding, bodyTop,
             candleWidth - padding * 2, bodyHeight),
         Paint()
           ..color = color
