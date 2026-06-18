@@ -1,62 +1,7 @@
-// lib/screens/watchlist_screen.dart
-//
-// StockSense – Watchlist Screen
-// Place this file at:  stock_research_app/lib/screens/watchlist_screen.dart
-
 import 'package:flutter/material.dart';
-
-// ─── Data model ──────────────────────────────────────────────────────────────
-
-class WatchlistStock {
-  final String symbol;
-  final String name;
-  final double price;
-  final double changePercent;
-
-  const WatchlistStock({
-    required this.symbol,
-    required this.name,
-    required this.price,
-    required this.changePercent,
-  });
-}
-
-// ─── Sample local data (replace with Firebase later) ─────────────────────────
-
-final List<WatchlistStock> _defaultWatchlist = [
-  WatchlistStock(
-    symbol: 'RELIANCE',
-    name: 'Reliance Industries',
-    price: 2947.55,
-    changePercent: 1.34,
-  ),
-  WatchlistStock(
-    symbol: 'TCS',
-    name: 'Tata Consultancy Services',
-    price: 3812.20,
-    changePercent: -0.58,
-  ),
-  WatchlistStock(
-    symbol: 'INFY',
-    name: 'Infosys',
-    price: 1563.80,
-    changePercent: 2.11,
-  ),
-  WatchlistStock(
-    symbol: 'HDFCBANK',
-    name: 'HDFC Bank',
-    price: 1721.45,
-    changePercent: -1.03,
-  ),
-  WatchlistStock(
-    symbol: 'WIPRO',
-    name: 'Wipro',
-    price: 478.90,
-    changePercent: 0.67,
-  ),
-];
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
+import '../data/stock_service.dart';
+import '../utils.dart';
+import 'stock_detail_screen.dart';
 
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({super.key});
@@ -66,273 +11,217 @@ class WatchlistScreen extends StatefulWidget {
 }
 
 class _WatchlistScreenState extends State<WatchlistScreen> {
-  late List<WatchlistStock> _watchlist;
+  final StockService _stockService = StockService();
+  List<StockData> _watchlist = [];
+  bool _isLoading = true;
+
+  // Default watchlist symbols
+  final List<String> _symbols = [
+    'RELIANCE.NS',
+    'TCS.NS',
+    'INFY.NS',
+    'HDFCBANK.NS',
+    'WIPRO.NS',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _watchlist = List.from(_defaultWatchlist);
+    _loadWatchlist();
   }
 
-  // ── Remove with swipe or trash button ──────────────────────────────────────
+  Future<void> _loadWatchlist() async {
+    setState(() => _isLoading = true);
+    try {
+      final stocks = await _stockService.getWatchlistData(_symbols);
+      setState(() {
+        _watchlist = stocks;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
 
   void _removeStock(int index) {
     final removed = _watchlist[index];
     setState(() => _watchlist.removeAt(index));
+    _symbols.removeAt(index);
 
-    final theme = Theme.of(context);
-
-    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        backgroundColor: theme.colorScheme.inverseSurface,
+        backgroundColor: const Color(0xFF1B5E20),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        content: Text(
-          '${removed.name} removed',
-          style: TextStyle(color: theme.colorScheme.onInverseSurface, fontSize: 13),
-        ),
+        content: Text('${removed.companyName} removed'),
         action: SnackBarAction(
           label: 'Undo',
-          textColor: theme.colorScheme.inversePrimary,
-          onPressed: () => setState(() => _watchlist.insert(index, removed)),
+          textColor: Colors.white,
+          onPressed: () {
+            setState(() => _watchlist.insert(index, removed));
+            _symbols.insert(index, removed.symbol);
+          },
         ),
         duration: const Duration(seconds: 3),
       ),
     );
   }
 
-  // ── Confirm before deleting (long-press) ───────────────────────────────────
-
-  Future<void> _confirmRemove(int index) async {
-    final stock = _watchlist[index];
-    final confirmed = await showModalBottomSheet<bool>(
-      context: context,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _RemoveSheet(stockName: stock.name),
-    );
-    if (confirmed == true) _removeStock(index);
-  }
-
-  // ── Build ──────────────────────────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(context),
-      body: _watchlist.isEmpty ? _buildEmpty(context) : _buildList(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    final theme = Theme.of(context);
-    return AppBar(
-      backgroundColor: theme.colorScheme.primary,
-      foregroundColor: theme.colorScheme.onPrimary,
-      elevation: 0,
-      centerTitle: false,
-      title: const Text(
-        'Watchlist',
-        style: TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
-          letterSpacing: -0.5,
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1B5E20),
+        foregroundColor: Colors.white,
+        title: Text(
+          'Watchlist (${_watchlist.length} stocks)',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Center(
-            child: Text(
-              '${_watchlist.length} stocks',
-              style: TextStyle(
-                color: theme.colorScheme.onPrimary.withOpacity(0.75),
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── List ───────────────────────────────────────────────────────────────────
-
-  Widget _buildList() {
-    final divider = Theme.of(context).colorScheme.outlineVariant;
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: _watchlist.length,
-      separatorBuilder: (_, __) =>
-          Divider(color: divider, height: 1, indent: 16, endIndent: 16),
-      itemBuilder: (context, index) {
-        return _StockTile(
-          stock: _watchlist[index],
-          onRemove: () => _confirmRemove(index),
-          onSwipeRemove: () => _removeStock(index),
-        );
-      },
-    );
-  }
-
-  // ── Empty state ────────────────────────────────────────────────────────────
-
-  Widget _buildEmpty(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.bookmark_border_rounded,
-                color: theme.colorScheme.primary, size: 34),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'No stocks saved yet',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Search for a stock and tap the\nbookmark icon to add it here.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 14,
-              height: 1.5,
-            ),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadWatchlist,
           ),
         ],
       ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF1B5E20)))
+          : _watchlist.isEmpty
+              ? _buildEmpty()
+              : RefreshIndicator(
+                  onRefresh: _loadWatchlist,
+                  color: const Color(0xFF1B5E20),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _watchlist.length,
+                    itemBuilder: (context, index) {
+                      return _buildStockCard(_watchlist[index], index);
+                    },
+                  ),
+                ),
     );
   }
-}
 
-// ─── Stock tile ───────────────────────────────────────────────────────────────
-
-class _StockTile extends StatelessWidget {
-  final WatchlistStock stock;
-  final VoidCallback onRemove;
-  final VoidCallback onSwipeRemove;
-
-  const _StockTile({
-    required this.stock,
-    required this.onRemove,
-    required this.onSwipeRemove,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildStockCard(StockData stock, int index) {
     final isPositive = stock.changePercent >= 0;
-    final changeColor = isPositive ? Colors.green.shade700 : Colors.red.shade700;
-    final changeBg = isPositive ? Colors.green.shade50 : Colors.red.shade50;
-    final changeLabel =
-        '${isPositive ? '+' : ''}${stock.changePercent.toStringAsFixed(2)}%';
+    final color =
+        isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
+    final bgColor =
+        isPositive ? const Color(0xFFE8F5E9) : const Color(0xFFFFEBEE);
+    final symbol = stock.symbol.replaceAll('.NS', '');
 
     return Dismissible(
       key: ValueKey(stock.symbol),
       direction: DismissDirection.endToStart,
-      onDismissed: (_) => onSwipeRemove(),
-      background: const _SwipeBackground(),
-      child: InkWell(
-        onTap: () {
-          // TODO: navigate to StockDetailScreen
-        },
-        splashColor: theme.colorScheme.primary.withOpacity(0.08),
-        highlightColor: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      onDismissed: (_) => _removeStock(index),
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline, color: Colors.red.shade400),
+            const SizedBox(width: 6),
+            Text('Remove',
+                style: TextStyle(
+                    color: Colors.red.shade400,
+                    fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StockDetailScreen(
+              symbol: stock.symbol,
+              companyName: stock.companyName,
+            ),
+          ),
+        ),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2)),
+            ],
+          ),
           child: Row(
             children: [
-              _TickerAvatar(symbol: stock.symbol),
-              const SizedBox(width: 14),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B5E20).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    symbol.substring(0, symbol.length.clamp(0, 3)),
+                    style: const TextStyle(
+                        color: Color(0xFF1B5E20),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 11),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      stock.symbol,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
+                    Text(stock.companyName,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Color(0xFF1A1A1A)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 3),
-                    Text(
-                      stock.name,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(symbol,
+                        style: TextStyle(
+                            color: Colors.grey.shade500, fontSize: 12)),
                   ],
                 ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    '₹${_formatPrice(stock.price)}',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
+                  Text(formatRupee(stock.currentPrice),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: Color(0xFF1A1A1A))),
                   const SizedBox(height: 5),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: changeBg,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
+                        color: bgColor,
+                        borderRadius: BorderRadius.circular(6)),
                     child: Text(
-                      changeLabel,
+                      '${isPositive ? '+' : ''}${stock.changePercent.toStringAsFixed(2)}%',
                       style: TextStyle(
-                        color: changeColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+                          color: color,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: onRemove,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Icon(
-                    Icons.bookmark_remove_outlined,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    size: 22,
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -340,173 +229,24 @@ class _StockTile extends StatelessWidget {
     );
   }
 
-  String _formatPrice(double price) {
-    final parts = price.toStringAsFixed(2).split('.');
-    final intPart = parts[0];
-    final decPart = parts[1];
-    final buffer = StringBuffer();
-    int count = 0;
-    for (int i = intPart.length - 1; i >= 0; i--) {
-      if (count == 3 || (count > 3 && (count - 3) % 2 == 0)) {
-        buffer.write(',');
-      }
-      buffer.write(intPart[i]);
-      count++;
-    }
-    return '${buffer.toString().split('').reversed.join()}.$decPart';
-  }
-}
-
-// ─── Ticker avatar ────────────────────────────────────────────────────────────
-
-class _TickerAvatar extends StatelessWidget {
-  final String symbol;
-  const _TickerAvatar({required this.symbol});
-
-  static const List<MaterialColor> _palette = [
-    Colors.blue,
-    Colors.purple,
-    Colors.orange,
-    Colors.teal,
-    Colors.pink,
-    Colors.indigo,
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final base = _palette[symbol.codeUnitAt(0) % _palette.length];
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: base.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: base.shade100, width: 1),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        symbol.substring(0, symbol.length.clamp(0, 3)),
-        style: TextStyle(
-          color: base.shade700,
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Swipe-to-delete background ───────────────────────────────────────────────
-
-class _SwipeBackground extends StatelessWidget {
-  const _SwipeBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Colors.red.shade50,
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.delete_outline_rounded, color: Colors.red.shade700, size: 22),
-          const SizedBox(width: 6),
-          Text(
-            'Remove',
-            style: TextStyle(
-              color: Colors.red.shade700,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─── Confirm-remove bottom sheet ──────────────────────────────────────────────
-
-class _RemoveSheet extends StatelessWidget {
-  final String stockName;
-  const _RemoveSheet({required this.stockName});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
+  Widget _buildEmpty() {
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.outlineVariant,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            'Remove from Watchlist?',
-            style: TextStyle(
-              color: theme.colorScheme.onSurface,
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          Icon(Icons.bookmark_border_rounded,
+              size: 64, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          const Text('No stocks saved yet',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1A1A))),
           const SizedBox(height: 8),
           Text(
-            '$stockName will be removed. You can add it again anytime from Search.',
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 28),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface,
-                    side: BorderSide(color: theme.colorScheme.outlineVariant),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Keep it'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade50,
-                    foregroundColor: Colors.red.shade700,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Remove',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            ],
+            'Search for a stock and tap the\nbookmark icon to add it here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
           ),
         ],
       ),
