@@ -8,6 +8,7 @@ import 'theme/app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +39,7 @@ class MyApp extends StatelessWidget {
       title: 'StockSense',
       debugShowCheckedModeBanner: false,
       theme: themeNotifier.currentTheme,
-      home: const AuthWrapper(),
+      home: const SplashScreen(),
       routes: {
         '/home': (context) => const HomeScreen(),
       },
@@ -82,12 +83,7 @@ class AuthWrapper extends StatelessWidget {
       future: _getStartScreen(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            backgroundColor: Color(0xFF1B5E20),
-            body: Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
-          );
+          return const SplashScreen();
         }
         return snapshot.data ?? const LoginScreen();
       },
