@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils.dart';
+import '../data/stock_service.dart';
 
 class PortfolioStock {
   final String symbol;
@@ -32,6 +33,35 @@ class PortfolioScreen extends StatefulWidget {
 }
 
 class _PortfolioScreenState extends State<PortfolioScreen> {
+  final StockService _stockService = StockService();
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPrices();
+  }
+
+  Future<void> _refreshPrices() async {
+    setState(() => _isRefreshing = true);
+    for (int i = 0; i < _portfolio.length; i++) {
+      try {
+        final data = await _stockService.getStockData(_portfolio[i].symbol);
+        setState(() {
+          _portfolio[i] = PortfolioStock(
+            symbol: _portfolio[i].symbol,
+            name: _portfolio[i].name,
+            buyPrice: _portfolio[i].buyPrice,
+            quantity: _portfolio[i].quantity,
+            currentPrice: data.currentPrice,
+          );
+        });
+      } catch (e) {
+        print('Error refreshing ${_portfolio[i].symbol}: $e');
+      }
+    }
+    setState(() => _isRefreshing = false);
+  }
   final List<PortfolioStock> _portfolio = [
     PortfolioStock(
       symbol: 'RELIANCE.NS',
@@ -70,36 +100,72 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   double get _totalPL => _currentValue - _totalInvested;
   double get _totalPLPercent => (_totalPL / _totalInvested) * 100;
 
-  void _addStock() {
+  Future<void> _addStock() async {
     if (_symbolController.text.isEmpty ||
         _nameController.text.isEmpty ||
         _buyPriceController.text.isEmpty ||
-        _quantityController.text.isEmpty ||
-        _currentPriceController.text.isEmpty) {
+        _quantityController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill all fields'),
+          content: Text('Please fill all fields except current price'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
-    setState(() {
-      _portfolio.add(PortfolioStock(
-        symbol: _symbolController.text.toUpperCase(),
-        name: _nameController.text,
-        buyPrice: double.parse(_buyPriceController.text),
-        quantity: int.parse(_quantityController.text),
-        currentPrice: double.parse(_currentPriceController.text),
-      ));
-      _showAddForm = false;
+    setState(() => _showAddForm = false);
+
+    // Show loading
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Fetching live price...'),
+        backgroundColor: Color(0xFF1B5E20),
+        duration: Duration(seconds: 2),
+      ),
+    );
+
+    try {
+      // Fetch real current price
+      final stockService = _stockService;
+      String symbol = _symbolController.text.trim().toUpperCase();
+      if (!symbol.endsWith('.NS')) symbol = '$symbol.NS';
+
+      final stockData = await stockService.getStockData(symbol);
+
+      setState(() {
+        _portfolio.add(PortfolioStock(
+          symbol: symbol,
+          name: _nameController.text.trim().isEmpty
+              ? stockData.companyName
+              : _nameController.text.trim(),
+          buyPrice: double.parse(_buyPriceController.text),
+          quantity: int.parse(_quantityController.text),
+          currentPrice: stockData.currentPrice,
+        ));
+      });
+
       _symbolController.clear();
       _nameController.clear();
       _buyPriceController.clear();
       _quantityController.clear();
       _currentPriceController.clear();
-    });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              '${stockData.companyName} added at ₹${stockData.currentPrice}'),
+          backgroundColor: const Color(0xFF1B5E20),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not fetch price. Check symbol and try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -115,6 +181,21 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         actions: [
+          if (_isRefreshing)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _refreshPrices,
+            ),
           IconButton(
             icon: Icon(_showAddForm ? Icons.close : Icons.add),
             onPressed: () =>
@@ -231,14 +312,11 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                         isNumber: true),
                     _buildTextField(_quantityController, 'Quantity',
                         isNumber: true),
-                    _buildTextField(
-                        _currentPriceController, 'Current Price (₹)',
-                        isNumber: true),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _addStock,
+                        onPressed: () async => await _addStock(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1B5E20),
                           foregroundColor: Colors.white,
