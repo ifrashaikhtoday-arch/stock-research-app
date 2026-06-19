@@ -149,7 +149,10 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                   color: theme.colorScheme.primary))
           : _stockData == null
               ? const Center(child: Text('Failed to load data'))
-              : SingleChildScrollView(
+              : RefreshIndicator(
+                  onRefresh: () => _loadStockData(period: _selectedPeriod),
+                  color: const Color(0xFF1B5E20),
+                  child: SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -334,10 +337,11 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
+                     const SizedBox(height: 24),
                     ],
                   ),
                 ),
+              ),
     );
   }
 

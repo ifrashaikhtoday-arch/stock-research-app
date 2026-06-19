@@ -96,7 +96,13 @@ class _CompareScreenState extends State<CompareScreen> {
             style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
       ),
-      body: SingleChildScrollView(
+      body: RefreshIndicator(
+        onRefresh: () async {
+          if (_stock1 != null) await _searchStock(1, _stock1!.symbol);
+          if (_stock2 != null) await _searchStock(2, _stock2!.symbol);
+        },
+        color: const Color(0xFF1B5E20),
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
@@ -197,6 +203,7 @@ class _CompareScreenState extends State<CompareScreen> {
               ),
           ],
         ),
+      ),
       ),
     );
   }

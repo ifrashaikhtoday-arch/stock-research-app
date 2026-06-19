@@ -9,7 +9,6 @@ class PortfolioStock {
   final int quantity;
   final double currentPrice;
 
-
   PortfolioStock({
     required this.symbol,
     required this.name,
@@ -36,32 +35,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   final StockService _stockService = StockService();
   bool _isRefreshing = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _refreshPrices();
-  }
-
-  Future<void> _refreshPrices() async {
-    setState(() => _isRefreshing = true);
-    for (int i = 0; i < _portfolio.length; i++) {
-      try {
-        final data = await _stockService.getStockData(_portfolio[i].symbol);
-        setState(() {
-          _portfolio[i] = PortfolioStock(
-            symbol: _portfolio[i].symbol,
-            name: _portfolio[i].name,
-            buyPrice: _portfolio[i].buyPrice,
-            quantity: _portfolio[i].quantity,
-            currentPrice: data.currentPrice,
-          );
-        });
-      } catch (e) {
-        print('Error refreshing ${_portfolio[i].symbol}: $e');
-      }
-    }
-    setState(() => _isRefreshing = false);
-  }
   final List<PortfolioStock> _portfolio = [
     PortfolioStock(
       symbol: 'RELIANCE.NS',
@@ -91,7 +64,33 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _buyPriceController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
-  final TextEditingController _currentPriceController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshPrices();
+  }
+
+  Future<void> _refreshPrices() async {
+    setState(() => _isRefreshing = true);
+    for (int i = 0; i < _portfolio.length; i++) {
+      try {
+        final data = await _stockService.getStockData(_portfolio[i].symbol);
+        setState(() {
+          _portfolio[i] = PortfolioStock(
+            symbol: _portfolio[i].symbol,
+            name: _portfolio[i].name,
+            buyPrice: _portfolio[i].buyPrice,
+            quantity: _portfolio[i].quantity,
+            currentPrice: data.currentPrice,
+          );
+        });
+      } catch (e) {
+        print('Error refreshing ${_portfolio[i].symbol}: $e');
+      }
+    }
+    setState(() => _isRefreshing = false);
+  }
 
   double get _totalInvested =>
       _portfolio.fold(0, (sum, s) => sum + s.totalInvested);
@@ -107,7 +106,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         _quantityController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill all fields except current price'),
+          content: Text('Please fill all fields'),
           backgroundColor: Colors.red,
         ),
       );
@@ -116,7 +115,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
     setState(() => _showAddForm = false);
 
-    // Show loading
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Fetching live price...'),
@@ -126,12 +124,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     );
 
     try {
-      // Fetch real current price
-      final stockService = _stockService;
       String symbol = _symbolController.text.trim().toUpperCase();
       if (!symbol.endsWith('.NS')) symbol = '$symbol.NS';
 
-      final stockData = await stockService.getStockData(symbol);
+      final stockData = await _stockService.getStockData(symbol);
 
       setState(() {
         _portfolio.add(PortfolioStock(
@@ -149,7 +145,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       _nameController.clear();
       _buyPriceController.clear();
       _quantityController.clear();
-      _currentPriceController.clear();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -181,21 +176,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         actions: [
-          if (_isRefreshing)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2),
-              ),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _refreshPrices,
-            ),
+         
           IconButton(
             icon: Icon(_showAddForm ? Icons.close : Icons.add),
             onPressed: () =>
@@ -203,147 +184,153 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Summary card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1B5E20),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Total Portfolio Value',
-                      style: TextStyle(color: Colors.white70, fontSize: 13)),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatRupee(_currentValue),
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Invested',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 12)),
-                            Text(formatRupee(_totalInvested),
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600)),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('P&L',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 12)),
-                            Row(
-                              children: [
-                                Text(
-                                  '${isProfit ? '+' : ''}${formatRupee(_totalPL)}',
-                                  style: TextStyle(
-                                      color: isProfit
-                                          ? const Color(0xFF00C853)
-                                          : Colors.red.shade300,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  '(${isProfit ? '+' : ''}${_totalPLPercent.toStringAsFixed(2)}%)',
-                                  style: TextStyle(
-                                      color: isProfit
-                                          ? const Color(0xFF00C853)
-                                          : Colors.red.shade300,
-                                      fontSize: 12),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Add stock form
-            if (_showAddForm)
+      body: RefreshIndicator(
+        onRefresh: _refreshPrices,
+        color: const Color(0xFF1B5E20),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // Summary card
               Container(
-                padding: const EdgeInsets.all(16),
-                margin: const EdgeInsets.only(bottom: 16),
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFF1B5E20),
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 8)
-                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Add Stock',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    const Text('Total Portfolio Value',
+                        style:
+                            TextStyle(color: Colors.white70, fontSize: 13)),
+                    const SizedBox(height: 4),
+                    Text(
+                      formatRupee(_currentValue),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 12),
-                    _buildTextField(_symbolController,
-                        'NSE Symbol (e.g. RELIANCE.NS)'),
-                    _buildTextField(_nameController, 'Company Name'),
-                    _buildTextField(_buyPriceController, 'Buy Price (₹)',
-                        isNumber: true),
-                    _buildTextField(_quantityController, 'Quantity',
-                        isNumber: true),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async => await _addStock(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1B5E20),
-                          foregroundColor: Colors.white,
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Invested',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 12)),
+                              Text(formatRupee(_totalInvested),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
                         ),
-                        child: const Text('Add to Portfolio',
-                            style:
-                                TextStyle(fontWeight: FontWeight.bold)),
-                      ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('P&L',
+                                  style: TextStyle(
+                                      color: Colors.white70, fontSize: 12)),
+                              Row(
+                                children: [
+                                  Text(
+                                    '${isProfit ? '+' : ''}${formatRupee(_totalPL)}',
+                                    style: TextStyle(
+                                        color: isProfit
+                                            ? const Color(0xFF00C853)
+                                            : Colors.red.shade300,
+                                        fontWeight: FontWeight.w600),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '(${isProfit ? '+' : ''}${_totalPLPercent.toStringAsFixed(2)}%)',
+                                    style: TextStyle(
+                                        color: isProfit
+                                            ? const Color(0xFF00C853)
+                                            : Colors.red.shade300,
+                                        fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
 
-            // Stock list
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text('Holdings',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16)),
-            ),
-            const SizedBox(height: 8),
-            ..._portfolio.map((stock) => _buildStockCard(stock)),
-          ],
+              const SizedBox(height: 16),
+
+              // Add stock form
+              if (_showAddForm)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8)
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Add Stock',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(height: 12),
+                      _buildTextField(_symbolController,
+                          'NSE Symbol (e.g. RELIANCE)'),
+                      _buildTextField(_nameController, 'Company Name'),
+                      _buildTextField(_buyPriceController, 'Buy Price (₹)',
+                          isNumber: true),
+                      _buildTextField(_quantityController, 'Quantity',
+                          isNumber: true),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async => await _addStock(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1B5E20),
+                            foregroundColor: Colors.white,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: const Text('Add to Portfolio',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Stock list
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Holdings',
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16)),
+              ),
+              const SizedBox(height: 8),
+              ..._portfolio.map((stock) => _buildStockCard(stock)),
+            ],
+          ),
         ),
       ),
     );

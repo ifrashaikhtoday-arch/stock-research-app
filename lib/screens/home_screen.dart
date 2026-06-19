@@ -148,7 +148,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
-      body: CustomScrollView(
+      body: RefreshIndicator(
+        onRefresh: _loadStocks,
+        color: const Color(0xFF1B5E20),
+        child: CustomScrollView(
         slivers: [
           _buildHeader(),
           SliverToBoxAdapter(child: _buildMarketStatus()),
@@ -157,6 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
           SliverToBoxAdapter(child: _buildSectionTitle('Top Stocks')),
           SliverToBoxAdapter(child: _buildStockList()),
         ],
+        ),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
