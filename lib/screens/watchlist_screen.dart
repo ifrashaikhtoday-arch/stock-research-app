@@ -75,12 +75,12 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   // ── Remove with swipe or trash button ──────────────────────────────────────
   void _removeStock(int index) {
     final removed = _watchlist[index];
-    setState(() => _watchlist.removeAt(index));
+    setState(() => _watchlist.remove(removed));
 
     final theme = Theme.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
-    messenger.clearSnackBars();
+    messenger.hideCurrentSnackBar();
 
     messenger.showSnackBar(
       SnackBar(
@@ -96,12 +96,29 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           label: 'Undo',
           textColor: theme.colorScheme.inversePrimary,
           onPressed: () {
-            if (mounted) {
-              setState(() => _watchlist.insert(index, removed));
+            if (!mounted) return;
+            if (!_watchlist.contains(removed)) {
+              setState(() => _watchlist.add(removed));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  backgroundColor: theme.colorScheme.inverseSurface,
+                  behavior: SnackBarBehavior.floating,
+                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  content: Text(
+                    '${removed.name} restored',
+                    style: TextStyle(
+                        color: theme.colorScheme.onInverseSurface,
+                        fontSize: 13),
+                  ),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
             }
           },
         ),
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -248,98 +265,101 @@ class _StockTile extends StatelessWidget {
       direction: DismissDirection.endToStart,
       onDismissed: (_) => onSwipeRemove(),
       background: const _SwipeBackground(),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StockDetailScreen(
-                symbol: stock.symbol,
-                companyName: stock.name,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StockDetailScreen(
+                  symbol: stock.symbol,
+                  companyName: stock.name,
+                ),
               ),
-            ),
-          );
-        },
-        splashColor: theme.colorScheme.primary.withOpacity(0.08),
-        highlightColor: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              _TickerAvatar(symbol: stock.symbol),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          },
+          splashColor: theme.colorScheme.primary.withOpacity(0.08),
+          highlightColor: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                _TickerAvatar(symbol: stock.symbol),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stock.symbol,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        stock.name,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      stock.symbol,
+                      '₹${_formatPrice(stock.price)}',
                       style: TextStyle(
                         color: theme.colorScheme.onSurface,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      stock.name,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '₹${_formatPrice(stock.price)}',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: const [FontFeature.tabularFigures()],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: changeBg,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      changeLabel,
-                      style: TextStyle(
-                        color: changeColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: onRemove,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Icon(
-                    Icons.bookmark_remove_outlined,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    size: 22,
+                    const SizedBox(height: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: changeBg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        changeLabel,
+                        style: TextStyle(
+                          color: changeColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: onRemove,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.bookmark_remove_outlined,
+                      color: theme.colorScheme.onSurfaceVariant,
+                      size: 22,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

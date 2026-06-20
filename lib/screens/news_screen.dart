@@ -53,6 +53,7 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
 
   // ── Fetches real news from NewsAPI.org ──────────────────────────────────
   Future<void> _loadNews() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -72,6 +73,8 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
       final marketResponse = await http.get(marketUrl);
       final stockResponse = await http.get(stockUrl);
 
+      if (!mounted) return;
+
       if (marketResponse.statusCode == 200 && stockResponse.statusCode == 200) {
         final marketData = json.decode(marketResponse.body);
         final stockData = json.decode(stockResponse.body);
@@ -88,6 +91,7 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
         });
       }
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _errorMessage = 'Something went wrong. Check your internet connection.';
         _isLoading = false;
@@ -124,6 +128,15 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
       }
     } catch (e) {
       return '';
+    }
+  }
+
+  // ── Opens the article link in the phone's browser ──────────────────────
+  Future<void> _openArticle(String url) async {
+    if (url.isEmpty) return;
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
     }
   }
 
@@ -276,14 +289,5 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
         },
       ),
     );
-  }
-
-  // ── Opens the article link in the phone's browser ──────────────────────
-  Future<void> _openArticle(String url) async {
-    if (url.isEmpty) return;
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 }
