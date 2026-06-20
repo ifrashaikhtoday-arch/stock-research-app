@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'walkthrough_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -64,11 +66,14 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeController.forward();
     await Future.delayed(const Duration(milliseconds: 2500));
     if (mounted) {
-      Navigator.pushReplacement(
+      final prefs = await SharedPreferences.getInstance();
+    final seenWalkthrough = prefs.getBool('seen_walkthrough') ?? false;
+
+    Navigator.pushReplacement(
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
-              const LoginScreen(),
+              seenWalkthrough ? const LoginScreen() : const WalkthroughScreen(),
           transitionsBuilder:
               (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
