@@ -20,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final StockService _stockService = StockService();
   List<StockData> _stocks = [];
   bool _isLoading = true;
+  Map<String, StockData> _indices = {};
 
   final Map<String, List<Map<String, String>>> _sectorStocks = {
     'IT': [
@@ -94,6 +95,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     _loadStocks();
+    _loadIndices();
+  }
+
+  Future<void> _loadIndices() async {
+    try {
+      final indices = await _stockService.getIndices();
+      setState(() => _indices = indices);
+    } catch (e) {
+      print('Error loading indices: $e');
+    }
   }
 
   Future<void> _loadStocks() async {
@@ -155,6 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
         slivers: [
           _buildHeader(),
           SliverToBoxAdapter(child: _buildMarketStatus()),
+          SliverToBoxAdapter(child: _buildIndexCard()),
           SliverToBoxAdapter(child: _buildSearchBar()),
           SliverToBoxAdapter(child: _buildPortfolioCard()),
           SliverToBoxAdapter(child: _buildSectionTitle('Top Stocks')),
@@ -273,7 +285,90 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+Widget _buildIndexCard() {
+    if (_indices.isEmpty) return const SizedBox.shrink();
 
+    final nifty = _indices['Nifty 50'];
+    final sensex = _indices['Sensex'];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (nifty != null)
+            Expanded(
+              child: _buildIndexItem('Nifty 50', nifty),
+            ),
+          if (nifty != null && sensex != null)
+            Container(
+              width: 1,
+              height: 40,
+              color: Colors.grey.shade200,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+          if (sensex != null)
+            Expanded(
+              child: _buildIndexItem('Sensex', sensex),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIndexItem(String name, StockData data) {
+    final isPositive = data.changePercent >= 0;
+    final color =
+        isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(name,
+            style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 12,
+                fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        Text(
+          data.currentPrice.toStringAsFixed(2),
+          style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Color(0xFF1A1A1A)),
+        ),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            Icon(
+              isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+              size: 12,
+              color: color,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              '${isPositive ? '+' : ''}${data.changePercent.toStringAsFixed(2)}%',
+              style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
   Widget _buildSearchBar() {
     return GestureDetector(
       onTap: () => Navigator.push(context,
