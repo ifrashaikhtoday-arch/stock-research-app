@@ -3,13 +3,13 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 
-// Same model as before, now built from real API data
+// News article model
 class NewsArticle {
   final String source;
   final String timeAgo;
   final String headline;
   final String summary;
-  final String url; // link to the real article
+  final String url;
 
   const NewsArticle({
     required this.source,
@@ -35,8 +35,8 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
   bool _isLoading = true;
   String? _errorMessage;
 
-  // Your NewsAPI.org key
-  static const String _apiKey = '545a8c5b92eb4619b6f8a13d8786e180';
+  // Your GNews API key
+  static const String _apiKey = '37df242feaf50844872ec0d025c1e939';
 
   @override
   void initState() {
@@ -51,7 +51,7 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
     super.dispose();
   }
 
-  // ── Fetches real news from NewsAPI.org ──────────────────────────────────
+  // ── Fetches real news from GNews API ────────────────────────────────────
   Future<void> _loadNews() async {
     if (!mounted) return;
     setState(() {
@@ -62,12 +62,12 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
     try {
       // Market news: general Indian business news
       final marketUrl = Uri.parse(
-        'https://newsapi.org/v2/everything?q=Indian%20stock%20market&language=en&sortBy=publishedAt&apiKey=$_apiKey',
+        'https://gnews.io/api/v4/search?q=Indian%20stock%20market&lang=en&country=in&max=10&apikey=$_apiKey',
       );
 
       // Stock news: specific company news
       final stockUrl = Uri.parse(
-        'https://newsapi.org/v2/everything?q=Reliance%20OR%20TCS%20OR%20Infosys%20stock&language=en&sortBy=publishedAt&apiKey=$_apiKey',
+        'https://gnews.io/api/v4/search?q=Reliance%20OR%20TCS%20OR%20Infosys&lang=en&country=in&max=10&apikey=$_apiKey',
       );
 
       final marketResponse = await http.get(marketUrl);
@@ -99,9 +99,9 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
     }
   }
 
-  // ── Converts the raw API response into our NewsArticle objects ─────────
+  // ── Converts the raw GNews response into NewsArticle objects ───────────
   List<NewsArticle> _parseArticles(List<dynamic> rawArticles) {
-    return rawArticles.take(10).map((item) {
+    return rawArticles.map((item) {
       return NewsArticle(
         source: item['source']?['name'] ?? 'Unknown',
         timeAgo: _formatTimeAgo(item['publishedAt']),
@@ -112,7 +112,7 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
     }).toList();
   }
 
-  // ── Turns a date like "2026-06-20T10:00:00Z" into "2h ago" ──────────────
+  // ── Turns a date into "2h ago" ──────────────────────────────────────────
   String _formatTimeAgo(String? publishedAt) {
     if (publishedAt == null) return '';
     try {
@@ -152,7 +152,7 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: _loadNews, // tap to refresh news
+            onPressed: _loadNews,
           ),
         ],
         bottom: TabBar(
