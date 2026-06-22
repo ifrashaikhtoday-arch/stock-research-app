@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import '../data/watchlist_data.dart';
 
 // News article model
 class NewsArticle {
@@ -65,11 +67,16 @@ class _NewsScreenState extends State<NewsScreen> with SingleTickerProviderStateM
         'https://gnews.io/api/v4/search?q=Indian%20stock%20market&lang=en&country=in&max=10&apikey=$_apiKey',
       );
 
-      // Stock news: specific company news
-      final stockUrl = Uri.parse(
-        'https://gnews.io/api/v4/search?q=Reliance%20OR%20TCS%20OR%20Infosys&lang=en&country=in&max=10&apikey=$_apiKey',
-      );
+      // Stock news: watchlist ke stocks ki news
+      final watchlistData = Provider.of<WatchlistData>(context, listen: false);
+      final watchlistNames = watchlistData.stocks
+          .map((s) => s.name)
+          .join(' OR ');
+      final query = watchlistNames.isEmpty ? 'Indian stocks' : watchlistNames;
 
+      final stockUrl = Uri.parse(
+        'https://gnews.io/api/v4/search?q=${Uri.encodeComponent(query)}&lang=en&country=in&max=10&apikey=$_apiKey',
+      );
       final marketResponse = await http.get(marketUrl);
       final stockResponse = await http.get(stockUrl);
 

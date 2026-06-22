@@ -9,6 +9,7 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/splash_screen.dart';
+import 'data/watchlist_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,9 +22,12 @@ void main() async {
     persistenceEnabled: false,
   );
 
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
+ runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+        ChangeNotifierProvider(create: (_) => WatchlistData()),
+      ],
       child: const MyApp(),
     ),
   );

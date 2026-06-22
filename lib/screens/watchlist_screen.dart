@@ -1,81 +1,19 @@
 // lib/screens/watchlist_screen.dart
-//
-// StockSense – Watchlist Screen
-// Place this file at:  stock_research_app/lib/screens/watchlist_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../data/watchlist_data.dart';
 import '../screens/stock_detail_screen.dart';
 
-// ─── Data model ──────────────────────────────────────────────────────────────
-class WatchlistStock {
-  final String symbol;
-  final String name;
-  final double price;
-  final double changePercent;
-
-  const WatchlistStock({
-    required this.symbol,
-    required this.name,
-    required this.price,
-    required this.changePercent,
-  });
-}
-
-// ─── Sample local data (replace with Firebase later) ─────────────────────────
-final List<WatchlistStock> _defaultWatchlist = [
-  WatchlistStock(
-    symbol: 'RELIANCE.NS',
-    name: 'Reliance Industries',
-    price: 2947.55,
-    changePercent: 1.34,
-  ),
-  WatchlistStock(
-    symbol: 'TCS.NS',
-    name: 'Tata Consultancy Services',
-    price: 3812.20,
-    changePercent: -0.58,
-  ),
-  WatchlistStock(
-    symbol: 'INFY.NS',
-    name: 'Infosys',
-    price: 1563.80,
-    changePercent: 2.11,
-  ),
-  WatchlistStock(
-    symbol: 'HDFCBANK.NS',
-    name: 'HDFC Bank',
-    price: 1721.45,
-    changePercent: -1.03,
-  ),
-  WatchlistStock(
-    symbol: 'WIPRO.NS',
-    name: 'Wipro',
-    price: 478.90,
-    changePercent: 0.67,
-  ),
-];
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
-class WatchlistScreen extends StatefulWidget {
+class WatchlistScreen extends StatelessWidget {
   const WatchlistScreen({super.key});
 
-  @override
-  State<WatchlistScreen> createState() => _WatchlistScreenState();
-}
+  // ── Remove with manual auto-dismiss timer ──────────────────────────────
+  void _removeStock(BuildContext context, int index) {
+    final watchlistData = Provider.of<WatchlistData>(context, listen: false);
+    final removed = watchlistData.stocks[index];
 
-class _WatchlistScreenState extends State<WatchlistScreen> {
-  late List<WatchlistStock> _watchlist;
-
-  @override
-  void initState() {
-    super.initState();
-    _watchlist = List.from(_defaultWatchlist);
-  }
-
-  // ── Remove with swipe or trash button ──────────────────────────────────────
-  void _removeStock(int index) {
-    final removed = _watchlist[index];
-    setState(() => _watchlist.removeAt(index));
+    watchlistData.removeStock(index);
 
     final theme = Theme.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -96,24 +34,22 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           label: 'Undo',
           textColor: theme.colorScheme.inversePrimary,
           onPressed: () {
-            if (mounted) {
-              setState(() => _watchlist.insert(index, removed));
-            }
+            watchlistData.insertStock(index, removed);
           },
         ),
-        duration: const Duration(days: 1), // we control dismissal ourselves
+        duration: const Duration(days: 1),
       ),
     );
 
-    // Our OWN timer — manually hide the SnackBar after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       controller.close();
     });
   }
 
-  // ── Confirm before deleting (long-press) ───────────────────────────────────
-  Future<void> _confirmRemove(int index) async {
-    final stock = _watchlist[index];
+  // ── Confirm before deleting (long-press) ───────────────────────────────
+  Future<void> _confirmRemove(BuildContext context, int index) async {
+    final watchlistData = Provider.of<WatchlistData>(context, listen: false);
+    final stock = watchlistData.stocks[index];
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -122,19 +58,24 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       ),
       builder: (_) => _RemoveSheet(stockName: stock.name),
     );
-    if (confirmed == true) _removeStock(index);
+    if (confirmed == true && context.mounted) _removeStock(context, index);
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    // Watch the shared data — rebuilds when it changes
+    final watchlistData = context.watch<WatchlistData>();
+    final stocks = watchlistData.stocks;
+
     return Scaffold(
-      appBar: _buildAppBar(context),
-      body: _watchlist.isEmpty ? _buildEmpty(context) : _buildList(),
+      appBar: _buildAppBar(context, stocks.length),
+      body: stocks.isEmpty
+          ? _buildEmpty(context)
+          : _buildList(context, stocks),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
+  PreferredSizeWidget _buildAppBar(BuildContext context, int count) {
     final theme = Theme.of(context);
     return AppBar(
       backgroundColor: theme.colorScheme.primary,
@@ -154,7 +95,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           padding: const EdgeInsets.only(right: 16),
           child: Center(
             child: Text(
-              '${_watchlist.length} stocks',
+              '$count stocks',
               style: TextStyle(
                 color: theme.colorScheme.onPrimary.withOpacity(0.75),
                 fontSize: 13,
@@ -167,25 +108,23 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     );
   }
 
-  // ── List ───────────────────────────────────────────────────────────────────
-  Widget _buildList() {
+  Widget _buildList(BuildContext context, List<WatchlistStock> stocks) {
     final divider = Theme.of(context).colorScheme.outlineVariant;
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: _watchlist.length,
+      itemCount: stocks.length,
       separatorBuilder: (_, __) =>
           Divider(color: divider, height: 1, indent: 16, endIndent: 16),
       itemBuilder: (context, index) {
         return _StockTile(
-          stock: _watchlist[index],
-          onRemove: () => _confirmRemove(index),
-          onSwipeRemove: () => _removeStock(index),
+          stock: stocks[index],
+          onRemove: () => _confirmRemove(context, index),
+          onSwipeRemove: () => _removeStock(context, index),
         );
       },
     );
   }
 
-  // ── Empty state ────────────────────────────────────────────────────────────
   Widget _buildEmpty(BuildContext context) {
     final theme = Theme.of(context);
     return Center(
