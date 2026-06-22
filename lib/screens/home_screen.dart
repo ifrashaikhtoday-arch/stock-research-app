@@ -8,6 +8,7 @@ import 'compare_screen.dart';
 import 'portfolio_screen.dart';
 import 'news_screen.dart';
 import 'profile_screen.dart';
+import 'package:flutter/animation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -639,11 +640,13 @@ Widget _buildIndexCard() {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('₹${stock.currentPrice.toStringAsFixed(2)}',
+                AnimatedPrice(
+                    price: stock.currentPrice,
                     style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
-                        color: Color(0xFF1A1A1A))),
+                        color: Color(0xFF1A1A1A)),
+                  ),
                 const SizedBox(height: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -707,6 +710,70 @@ Widget _buildIndexCard() {
               label: 'News'),
         ],
       ),
+    );
+  }
+}
+class AnimatedPrice extends StatefulWidget {
+  final double price;
+  final TextStyle style;
+
+  const AnimatedPrice({
+    super.key,
+    required this.price,
+    required this.style,
+  });
+
+  @override
+  State<AnimatedPrice> createState() => _AnimatedPriceState();
+}
+
+class _AnimatedPriceState extends State<AnimatedPrice>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _animation = Tween<double>(begin: 0, end: widget.price).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(AnimatedPrice oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.price != widget.price) {
+      _animation = Tween<double>(
+              begin: oldWidget.price, end: widget.price)
+          .animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+      );
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Text(
+          '₹${_animation.value.toStringAsFixed(2)}',
+          style: widget.style,
+        );
+      },
     );
   }
 }
