@@ -38,7 +38,6 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   // ── Remove with manual auto-dismiss timer ──────────────────────────────
   void _removeStock(BuildContext context, WatchlistStock stock) {
     final watchlistData = Provider.of<WatchlistData>(context, listen: false);
-    // Find the real index in the original list
     final realIndex = watchlistData.stocks.indexOf(stock);
     if (realIndex == -1) return;
 
@@ -101,6 +100,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           : Column(
               children: [
                 _buildSortBar(),
+                _buildDisclaimer(),
                 Expanded(child: _buildList(context, sortedStocks)),
               ],
             ),
@@ -178,6 +178,24 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
+        ),
+      ),
+    );
+  }
+
+  // ── Subtle price-delay disclaimer ───────────────────────────────────────
+  Widget _buildDisclaimer() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(bottom: 8),
+      color: const Color(0xFFF5F7FA),
+      alignment: Alignment.center,
+      child: const Text(
+        '⚠️ Prices may be delayed by 15–20 minutes',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 11,
+          color: Color(0xFF9E9E9E),
         ),
       ),
     );
