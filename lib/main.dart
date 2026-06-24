@@ -1,3 +1,4 @@
+import 'data/watchlist_data.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,10 +21,12 @@ void main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: false,
   );
-
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
+runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+        ChangeNotifierProvider(create: (_) => WatchlistData()),
+      ],
       child: const MyApp(),
     ),
   );
