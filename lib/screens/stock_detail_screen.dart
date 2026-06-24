@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../data/stock_service.dart';
 import '../utils.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +31,11 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   String _selectedPeriod = '1mo';
   bool _isCandlestick = false;
   bool _isSaved = false;
+  bool _isSettingAlert = false;
+
+  // Base URL for our Railway backend
+  static const String _backendBaseUrl =
+      'https://stock-research-app-production-732d.up.railway.app';
 
   @override
   void initState() {
@@ -112,6 +120,133 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
     Share.share(text);
   }
 
+  // ===========================================================
+  // SET PRICE ALERT FEATURE
+  // ===========================================================
+
+  // Shows a dialog asking the user for a target price, then sends it
+  // to our Railway backend's /setStockAlert endpoint.
+  void _showSetAlertDialog(ThemeData theme) {
+    final TextEditingController priceController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Set Price Alert'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Get notified when ${widget.companyName} reaches your target price.',
+              style: TextStyle(
+                  fontSize: 13, color: theme.colorScheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: priceController,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Target Price (₹)',
+                prefixText: '₹ ',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final targetPrice = double.tryParse(priceController.text.trim());
+              if (targetPrice == null || targetPrice <= 0) {
+                ScaffoldMessenger.of(dialogContext).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please enter a valid price'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+              Navigator.pop(dialogContext);
+              _setStockAlert(targetPrice);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: theme.colorScheme.primary,
+              foregroundColor: theme.colorScheme.onPrimary,
+            ),
+            child: const Text('Set Alert'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Sends the alert request to our backend so it can notify the
+  // user later (via the cron job + push notification) when the
+  // target price is hit.
+  Future<void> _setStockAlert(double targetPrice) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    if (uid == null) {
+      if (mounted) {
+        _showToast(context, 'Please log in to set an alert', Colors.red);
+      }
+      return;
+    }
+
+    setState(() => _isSettingAlert = true);
+
+    try {
+      final url = Uri.parse('$_backendBaseUrl/setStockAlert');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'uid': uid,
+          'symbol': widget.symbol,
+          'companyName': widget.companyName,
+          'alertPrice': targetPrice,
+        }),
+      );
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _showToast(
+          context,
+          'Alert set for ${widget.companyName} at ${formatRupee(targetPrice)}',
+          Colors.green.shade700,
+        );
+      } else {
+        _showToast(
+          context,
+          'Failed to set alert. Please try again.',
+          Colors.red,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showToast(
+          context,
+          'Network error. Please check your connection.',
+          Colors.red,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSettingAlert = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -128,6 +263,21 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         elevation: 0,
         actions: [
+          // NEW: Set Price Alert button
+          IconButton(
+            icon: _isSettingAlert
+                ? SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.colorScheme.onPrimary,
+                    ),
+                  )
+                : const Icon(Icons.notifications_none_outlined),
+            onPressed: _isSettingAlert ? null : () => _showSetAlertDialog(theme),
+            tooltip: 'Set Price Alert',
+          ),
           IconButton(
               icon: const Icon(Icons.share_outlined), onPressed: _shareStock),
           IconButton(
