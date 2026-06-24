@@ -1,11 +1,9 @@
 // lib/data/watchlist_data.dart
-//
-// Shared watchlist — yahan watchlist ka data rehta hai taaki
-// Watchlist screen aur News screen dono ise use kar sakein.
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
-// Ek stock ka model
 class WatchlistStock {
   final String symbol;
   final String name;
@@ -18,63 +16,74 @@ class WatchlistStock {
     required this.price,
     required this.changePercent,
   });
+
+  Map<String, dynamic> toJson() => {
+        'symbol': symbol,
+        'name': name,
+        'price': price,
+        'changePercent': changePercent,
+      };
+
+  factory WatchlistStock.fromJson(Map<String, dynamic> json) => WatchlistStock(
+        symbol: json['symbol'] ?? '',
+        name: json['name'] ?? '',
+        price: (json['price'] ?? 0).toDouble(),
+        changePercent: (json['changePercent'] ?? 0).toDouble(),
+      );
 }
 
-// Ye ChangeNotifier hai — jab bhi watchlist badalti hai,
-// ye sabhi screens ko bata deta hai ki "update ho gaya, dobara dikhao"
 class WatchlistData extends ChangeNotifier {
-  // Shuruaati (default) stocks
-  final List<WatchlistStock> _stocks = [
-    const WatchlistStock(
-      symbol: 'RELIANCE.NS',
-      name: 'Reliance Industries',
-      price: 2947.55,
-      changePercent: 1.34,
-    ),
-    const WatchlistStock(
-      symbol: 'TCS.NS',
-      name: 'Tata Consultancy Services',
-      price: 3812.20,
-      changePercent: -0.58,
-    ),
-    const WatchlistStock(
-      symbol: 'INFY.NS',
-      name: 'Infosys',
-      price: 1563.80,
-      changePercent: 2.11,
-    ),
-    const WatchlistStock(
-      symbol: 'HDFCBANK.NS',
-      name: 'HDFC Bank',
-      price: 1721.45,
-      changePercent: -1.03,
-    ),
-    const WatchlistStock(
-      symbol: 'WIPRO.NS',
-      name: 'Wipro',
-      price: 478.90,
-      changePercent: 0.67,
-    ),
-  ];
+  List<WatchlistStock> _stocks = [];
 
-  // Baaki screens isse watchlist padhti hain
   List<WatchlistStock> get stocks => _stocks;
 
-  // Stock hatao
-  void removeStock(int index) {
-    _stocks.removeAt(index);
-    notifyListeners(); // sabhi screens ko batao
+  WatchlistData() {
+    _loadFromStorage();
   }
 
-  // Stock wapas daalo (Undo ke liye)
+  Future<void> _loadFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? saved = prefs.getString('watchlist');
+      if (saved != null && saved.isNotEmpty) {
+        final List<dynamic> decoded = json.decode(saved);
+        _stocks = decoded.map((item) => WatchlistStock.fromJson(item)).toList();
+        notifyListeners();
+      }
+    } catch (e) {
+      _stocks = [];
+    }
+  }
+
+  Future<void> _saveToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String encoded =
+          json.encode(_stocks.map((s) => s.toJson()).toList());
+      await prefs.setString('watchlist', encoded);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  void removeStock(int index) {
+    _stocks.removeAt(index);
+    notifyListeners();
+    _saveToStorage();
+  }
+
   void insertStock(int index, WatchlistStock stock) {
     _stocks.insert(index, stock);
     notifyListeners();
+    _saveToStorage();
   }
 
-  // Naya stock add karo
   void addStock(WatchlistStock stock) {
+    final exists = _stocks.any((s) => s.symbol == stock.symbol);
+    if (exists) return;
+
     _stocks.add(stock);
     notifyListeners();
+    _saveToStorage();
   }
 }
