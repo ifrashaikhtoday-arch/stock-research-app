@@ -1,61 +1,13 @@
 // lib/screens/watchlist_screen.dart
-//
-// StockSense – Watchlist Screen
-// Place this file at:  stock_research_app/lib/screens/watchlist_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../data/watchlist_data.dart';
 import '../screens/stock_detail_screen.dart';
 
-// ─── Data model ──────────────────────────────────────────────────────────────
-class WatchlistStock {
-  final String symbol;
-  final String name;
-  final double price;
-  final double changePercent;
+// Sort options
+enum SortOption { gainers, losers, alphabetical }
 
-  const WatchlistStock({
-    required this.symbol,
-    required this.name,
-    required this.price,
-    required this.changePercent,
-  });
-}
-
-// ─── Sample local data (replace with Firebase later) ─────────────────────────
-final List<WatchlistStock> _defaultWatchlist = [
-  WatchlistStock(
-    symbol: 'RELIANCE.NS',
-    name: 'Reliance Industries',
-    price: 2947.55,
-    changePercent: 1.34,
-  ),
-  WatchlistStock(
-    symbol: 'TCS.NS',
-    name: 'Tata Consultancy Services',
-    price: 3812.20,
-    changePercent: -0.58,
-  ),
-  WatchlistStock(
-    symbol: 'INFY.NS',
-    name: 'Infosys',
-    price: 1563.80,
-    changePercent: 2.11,
-  ),
-  WatchlistStock(
-    symbol: 'HDFCBANK.NS',
-    name: 'HDFC Bank',
-    price: 1721.45,
-    changePercent: -1.03,
-  ),
-  WatchlistStock(
-    symbol: 'WIPRO.NS',
-    name: 'Wipro',
-    price: 478.90,
-    changePercent: 0.67,
-  ),
-];
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
 class WatchlistScreen extends StatefulWidget {
   const WatchlistScreen({super.key});
 
@@ -64,18 +16,32 @@ class WatchlistScreen extends StatefulWidget {
 }
 
 class _WatchlistScreenState extends State<WatchlistScreen> {
-  late List<WatchlistStock> _watchlist;
+  SortOption _currentSort = SortOption.gainers;
 
-  @override
-  void initState() {
-    super.initState();
-    _watchlist = List.from(_defaultWatchlist);
+  // ── Returns the sorted list based on selected option ────────────────────
+  List<WatchlistStock> _getSortedStocks(List<WatchlistStock> stocks) {
+    final sorted = List<WatchlistStock>.from(stocks);
+    switch (_currentSort) {
+      case SortOption.gainers:
+        sorted.sort((a, b) => b.changePercent.compareTo(a.changePercent));
+        break;
+      case SortOption.losers:
+        sorted.sort((a, b) => a.changePercent.compareTo(b.changePercent));
+        break;
+      case SortOption.alphabetical:
+        sorted.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+        break;
+    }
+    return sorted;
   }
 
-  // ── Remove with swipe or trash button ──────────────────────────────────────
-  void _removeStock(int index) {
-    final removed = _watchlist[index];
-    setState(() => _watchlist.removeAt(index));
+  // ── Remove with manual auto-dismiss timer ──────────────────────────────
+  void _removeStock(BuildContext context, WatchlistStock stock) {
+    final watchlistData = Provider.of<WatchlistData>(context, listen: false);
+    final realIndex = watchlistData.stocks.indexOf(stock);
+    if (realIndex == -1) return;
+
+    watchlistData.removeStock(realIndex);
 
     final theme = Theme.of(context);
     final messenger = ScaffoldMessenger.of(context);
@@ -89,31 +55,27 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         content: Text(
-          '${removed.name} removed',
+          '${stock.name} removed',
           style: TextStyle(color: theme.colorScheme.onInverseSurface, fontSize: 13),
         ),
         action: SnackBarAction(
           label: 'Undo',
           textColor: theme.colorScheme.inversePrimary,
           onPressed: () {
-            if (mounted) {
-              setState(() => _watchlist.insert(index, removed));
-            }
+            watchlistData.insertStock(realIndex, stock);
           },
         ),
-        duration: const Duration(days: 1), // we control dismissal ourselves
+        duration: const Duration(days: 1),
       ),
     );
 
-    // Our OWN timer — manually hide the SnackBar after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       controller.close();
     });
   }
 
-  // ── Confirm before deleting (long-press) ───────────────────────────────────
-  Future<void> _confirmRemove(int index) async {
-    final stock = _watchlist[index];
+  // ── Confirm before deleting (long-press) ───────────────────────────────
+  Future<void> _confirmRemove(BuildContext context, WatchlistStock stock) async {
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       backgroundColor: Theme.of(context).colorScheme.surface,
@@ -122,23 +84,33 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
       ),
       builder: (_) => _RemoveSheet(stockName: stock.name),
     );
-    if (confirmed == true) _removeStock(index);
+    if (confirmed == true && context.mounted) _removeStock(context, stock);
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
+    final watchlistData = context.watch<WatchlistData>();
+    final sortedStocks = _getSortedStocks(watchlistData.stocks);
+
     return Scaffold(
-      appBar: _buildAppBar(context),
-      body: _watchlist.isEmpty ? _buildEmpty(context) : _buildList(),
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: _buildAppBar(context, watchlistData.stocks.length),
+      body: watchlistData.stocks.isEmpty
+          ? _buildEmpty(context)
+          : Column(
+              children: [
+                _buildSortBar(),
+                _buildDisclaimer(),
+                Expanded(child: _buildList(context, sortedStocks)),
+              ],
+            ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    final theme = Theme.of(context);
+  PreferredSizeWidget _buildAppBar(BuildContext context, int count) {
     return AppBar(
-      backgroundColor: theme.colorScheme.primary,
-      foregroundColor: theme.colorScheme.onPrimary,
+      backgroundColor: const Color(0xFF1B5E20),
+      foregroundColor: Colors.white,
       elevation: 0,
       centerTitle: false,
       title: const Text(
@@ -154,9 +126,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
           padding: const EdgeInsets.only(right: 16),
           child: Center(
             child: Text(
-              '${_watchlist.length} stocks',
+              '$count stocks',
               style: TextStyle(
-                color: theme.colorScheme.onPrimary.withOpacity(0.75),
+                color: Colors.white.withOpacity(0.75),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -167,27 +139,88 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     );
   }
 
-  // ── List ───────────────────────────────────────────────────────────────────
-  Widget _buildList() {
-    final divider = Theme.of(context).colorScheme.outlineVariant;
+  // ── Sort chips bar ──────────────────────────────────────────────────────
+  Widget _buildSortBar() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: const Color(0xFFF5F7FA),
+      child: Row(
+        children: [
+          _buildSortChip('Gainers', SortOption.gainers),
+          const SizedBox(width: 10),
+          _buildSortChip('Losers', SortOption.losers),
+          const SizedBox(width: 10),
+          _buildSortChip('A-Z', SortOption.alphabetical),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortChip(String label, SortOption option) {
+    final isSelected = _currentSort == option;
+    return GestureDetector(
+      onTap: () => setState(() => _currentSort = option),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1B5E20) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF1B5E20) : Colors.grey.shade300,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.grey.shade700,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Subtle price-delay disclaimer ───────────────────────────────────────
+  Widget _buildDisclaimer() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(bottom: 8),
+      color: const Color(0xFFF5F7FA),
+      alignment: Alignment.center,
+      child: const Text(
+        '⚠️ Prices may be delayed by 15–20 minutes',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 11,
+          color: Color(0xFF9E9E9E),
+        ),
+      ),
+    );
+  }
+
+  // ── List ────────────────────────────────────────────────────────────────
+  Widget _buildList(BuildContext context, List<WatchlistStock> stocks) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      itemCount: _watchlist.length,
+      itemCount: stocks.length,
       separatorBuilder: (_, __) =>
-          Divider(color: divider, height: 1, indent: 16, endIndent: 16),
+          Divider(color: Colors.grey.shade200, height: 1, indent: 16, endIndent: 16),
       itemBuilder: (context, index) {
+        final stock = stocks[index];
         return _StockTile(
-          stock: _watchlist[index],
-          onRemove: () => _confirmRemove(index),
-          onSwipeRemove: () => _removeStock(index),
+          stock: stock,
+          onRemove: () => _confirmRemove(context, stock),
+          onSwipeRemove: () => _removeStock(context, stock),
         );
       },
     );
   }
 
-  // ── Empty state ────────────────────────────────────────────────────────────
+  // ── Empty state ──────────────────────────────────────────────────────────
   Widget _buildEmpty(BuildContext context) {
-    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -196,17 +229,17 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: theme.colorScheme.primaryContainer,
+              color: const Color(0xFF1B5E20).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.bookmark_border_rounded,
-                color: theme.colorScheme.primary, size: 34),
+            child: const Icon(Icons.bookmark_border_rounded,
+                color: Color(0xFF1B5E20), size: 34),
           ),
           const SizedBox(height: 20),
-          Text(
+          const Text(
             'No stocks saved yet',
             style: TextStyle(
-              color: theme.colorScheme.onSurface,
+              color: Color(0xFF1A1A1A),
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -216,7 +249,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             'Search for a stock and tap the\nbookmark icon to add it here.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: Colors.grey.shade600,
               fontSize: 14,
               height: 1.5,
             ),
@@ -241,7 +274,6 @@ class _StockTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isPositive = stock.changePercent >= 0;
     final changeColor = isPositive ? Colors.green.shade700 : Colors.red.shade700;
     final changeBg = isPositive ? Colors.green.shade50 : Colors.red.shade50;
@@ -253,98 +285,101 @@ class _StockTile extends StatelessWidget {
       direction: DismissDirection.endToStart,
       onDismissed: (_) => onSwipeRemove(),
       background: const _SwipeBackground(),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StockDetailScreen(
-                symbol: stock.symbol,
-                companyName: stock.name,
+      child: Material(
+        color: const Color(0xFFF5F7FA),
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StockDetailScreen(
+                  symbol: stock.symbol,
+                  companyName: stock.name,
+                ),
               ),
-            ),
-          );
-        },
-        splashColor: theme.colorScheme.primary.withOpacity(0.08),
-        highlightColor: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              _TickerAvatar(symbol: stock.symbol),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          },
+          splashColor: const Color(0xFF1B5E20).withOpacity(0.08),
+          highlightColor: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                _TickerAvatar(symbol: stock.symbol),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        stock.symbol,
+                        style: const TextStyle(
+                          color: Color(0xFF1A1A1A),
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        stock.name,
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      stock.symbol,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurface,
+                      '₹${_formatPrice(stock.price)}',
+                      style: const TextStyle(
+                        color: Color(0xFF1A1A1A),
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        letterSpacing: 0.2,
+                        fontFeatures: [FontFeature.tabularFigures()],
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      stock.name,
-                      style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
+                    const SizedBox(height: 5),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: changeBg,
+                        borderRadius: BorderRadius.circular(6),
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      child: Text(
+                        changeLabel,
+                        style: TextStyle(
+                          color: changeColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '₹${_formatPrice(stock.price)}',
-                    style: TextStyle(
-                      color: theme.colorScheme.onSurface,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      fontFeatures: const [FontFeature.tabularFigures()],
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: onRemove,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.bookmark_remove_outlined,
+                      color: Colors.grey.shade600,
+                      size: 22,
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: changeBg,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      changeLabel,
-                      style: TextStyle(
-                        color: changeColor,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 6),
-              GestureDetector(
-                onTap: onRemove,
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Icon(
-                    Icons.bookmark_remove_outlined,
-                    color: theme.colorScheme.onSurfaceVariant,
-                    size: 22,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -445,7 +480,6 @@ class _RemoveSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
       child: Column(
@@ -457,16 +491,16 @@ class _RemoveSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.outlineVariant,
+                color: Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 24),
-          Text(
+          const Text(
             'Remove from Watchlist?',
             style: TextStyle(
-              color: theme.colorScheme.onSurface,
+              color: Color(0xFF1A1A1A),
               fontSize: 17,
               fontWeight: FontWeight.w700,
             ),
@@ -475,7 +509,7 @@ class _RemoveSheet extends StatelessWidget {
           Text(
             '$stockName will be removed. You can add it again anytime from Search.',
             style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
+              color: Colors.grey.shade600,
               fontSize: 14,
               height: 1.5,
             ),
@@ -487,8 +521,8 @@ class _RemoveSheet extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context, false),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface,
-                    side: BorderSide(color: theme.colorScheme.outlineVariant),
+                    foregroundColor: const Color(0xFF1A1A1A),
+                    side: BorderSide(color: Colors.grey.shade300),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),

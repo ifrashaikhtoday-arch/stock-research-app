@@ -174,6 +174,22 @@ class StockService {
     }
     return watchlist;
   }
+  Future<Map<String, StockData>> getIndices() async {
+    final results = <String, StockData>{};
+    try {
+      final nifty = await getStockData('^NSEI');
+      results['Nifty 50'] = nifty;
+    } catch (e) {
+      print('Error fetching Nifty: $e');
+    }
+    try {
+      final sensex = await getStockData('^BSESN');
+      results['Sensex'] = sensex;
+    } catch (e) {
+      print('Error fetching Sensex: $e');
+    }
+    return results;
+  }
   // Fetches 30 days of closing prices for a stock
 Future<List<double>> getPriceHistory(String symbol, {String period = '1mo'}) async {
     final url = Uri.parse(

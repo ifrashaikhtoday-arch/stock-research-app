@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../data/stock_service.dart';
 import '../utils.dart';
+import 'package:provider/provider.dart';
+import '../data/watchlist_data.dart';
 
 class StockDetailScreen extends StatefulWidget {
   final String symbol;
@@ -136,6 +138,17 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
             onPressed: () {
               if (_isSaved) return;
               setState(() => _isSaved = true);
+
+              // Shared watchlist mein actually add karo
+              final watchlistData =
+                  Provider.of<WatchlistData>(context, listen: false);
+              watchlistData.addStock(WatchlistStock(
+                symbol: widget.symbol,
+                name: widget.companyName,
+                price: _stockData?.currentPrice ?? 0,
+                changePercent: _stockData?.changePercent ?? 0,
+              ));
+
               _showToast(context, '${widget.companyName} added to watchlist!',
                   theme.colorScheme.primary,
                   showUndo: true);
@@ -194,6 +207,14 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                                     color: Colors.white,
                                     fontWeight: FontWeight.w600,
                                     fontSize: 13),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Data delayed by 15 mins',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.6),
+                                fontSize: 10,
                               ),
                             ),
                           ],

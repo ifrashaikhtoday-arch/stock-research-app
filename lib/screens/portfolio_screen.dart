@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../utils.dart';
 import '../data/stock_service.dart';
 
@@ -22,6 +24,22 @@ class PortfolioStock {
   double get profitLoss => currentValue - totalInvested;
   double get profitLossPercent => (profitLoss / totalInvested) * 100;
   bool get isProfit => profitLoss >= 0;
+
+  Map<String, dynamic> toJson() => {
+        'symbol': symbol,
+        'name': name,
+        'buyPrice': buyPrice,
+        'quantity': quantity,
+        'currentPrice': currentPrice,
+      };
+
+  factory PortfolioStock.fromJson(Map<String, dynamic> json) => PortfolioStock(
+        symbol: json['symbol'],
+        name: json['name'],
+        buyPrice: json['buyPrice'].toDouble(),
+        quantity: json['quantity'],
+        currentPrice: json['currentPrice'].toDouble(),
+      );
 }
 
 class PortfolioScreen extends StatefulWidget {
@@ -34,30 +52,7 @@ class PortfolioScreen extends StatefulWidget {
 class _PortfolioScreenState extends State<PortfolioScreen> {
   final StockService _stockService = StockService();
   bool _isRefreshing = false;
-
-  final List<PortfolioStock> _portfolio = [
-    PortfolioStock(
-      symbol: 'RELIANCE.NS',
-      name: 'Reliance Industries',
-      buyPrice: 2600,
-      quantity: 5,
-      currentPrice: 2800,
-    ),
-    PortfolioStock(
-      symbol: 'TCS.NS',
-      name: 'Tata Consultancy Services',
-      buyPrice: 3800,
-      quantity: 2,
-      currentPrice: 3500,
-    ),
-    PortfolioStock(
-      symbol: 'INFY.NS',
-      name: 'Infosys',
-      buyPrice: 1400,
-      quantity: 10,
-      currentPrice: 1500,
-    ),
-  ];
+  List<PortfolioStock> _portfolio = [];
 
   bool _showAddForm = false;
   final TextEditingController _symbolController = TextEditingController();
@@ -65,13 +60,33 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   final TextEditingController _buyPriceController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
 
+  List<MapEntry<String, String>> _stockSuggestions = [];
+  bool _showSuggestions = false;
+
   @override
   void initState() {
     super.initState();
-    _refreshPrices();
+    _loadPortfolio().then((_) => _refreshPrices());
+  }
+
+  Future<void> _savePortfolio() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = _portfolio.map((s) => jsonEncode(s.toJson())).toList();
+    await prefs.setStringList('portfolio_stocks', data);
+  }
+
+  Future<void> _loadPortfolio() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getStringList('portfolio_stocks') ?? [];
+    setState(() {
+      _portfolio = data
+          .map((s) => PortfolioStock.fromJson(jsonDecode(s)))
+          .toList();
+    });
   }
 
   Future<void> _refreshPrices() async {
+    if (_portfolio.isEmpty) return;
     setState(() => _isRefreshing = true);
     for (int i = 0; i < _portfolio.length; i++) {
       try {
@@ -89,7 +104,27 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         print('Error refreshing ${_portfolio[i].symbol}: $e');
       }
     }
+    await _savePortfolio();
     setState(() => _isRefreshing = false);
+  }
+
+  void _updatePortfolioSuggestions(String query) {
+    if (query.trim().isEmpty) {
+      setState(() {
+        _stockSuggestions = [];
+        _showSuggestions = false;
+      });
+      return;
+    }
+    final lower = query.trim().toLowerCase();
+    final matches = stockSymbols.entries
+        .where((entry) => entry.key.contains(lower))
+        .take(5)
+        .toList();
+    setState(() {
+      _stockSuggestions = matches;
+      _showSuggestions = matches.isNotEmpty;
+    });
   }
 
   double get _totalInvested =>
@@ -97,11 +132,11 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   double get _currentValue =>
       _portfolio.fold(0, (sum, s) => sum + s.currentValue);
   double get _totalPL => _currentValue - _totalInvested;
-  double get _totalPLPercent => (_totalPL / _totalInvested) * 100;
+  double get _totalPLPercent =>
+      _portfolio.isEmpty ? 0 : (_totalPL / _totalInvested) * 100;
 
   Future<void> _addStock() async {
     if (_symbolController.text.isEmpty ||
-        _nameController.text.isEmpty ||
         _buyPriceController.text.isEmpty ||
         _quantityController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -141,6 +176,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         ));
       });
 
+      await _savePortfolio();
+
       _symbolController.clear();
       _nameController.clear();
       _buyPriceController.clear();
@@ -176,7 +213,6 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         actions: [
-         
           IconButton(
             icon: Icon(_showAddForm ? Icons.close : Icons.add),
             onPressed: () =>
@@ -204,11 +240,13 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('Total Portfolio Value',
-                        style:
-                            TextStyle(color: Colors.white70, fontSize: 13)),
+                        style: TextStyle(
+                            color: Colors.white70, fontSize: 13)),
                     const SizedBox(height: 4),
                     Text(
-                      formatRupee(_currentValue),
+                      _portfolio.isEmpty
+                          ? '₹0.00'
+                          : formatRupee(_currentValue),
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 28,
@@ -224,7 +262,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                               const Text('Invested',
                                   style: TextStyle(
                                       color: Colors.white70, fontSize: 12)),
-                              Text(formatRupee(_totalInvested),
+                              Text(
+                                  _portfolio.isEmpty
+                                      ? '₹0.00'
+                                      : formatRupee(_totalInvested),
                                   style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w600)),
@@ -238,27 +279,33 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                               const Text('P&L',
                                   style: TextStyle(
                                       color: Colors.white70, fontSize: 12)),
-                              Row(
-                                children: [
-                                  Text(
-                                    '${isProfit ? '+' : ''}${formatRupee(_totalPL)}',
+                              if (_portfolio.isNotEmpty)
+                                Row(
+                                  children: [
+                                    Text(
+                                      '${isProfit ? '+' : ''}${formatRupee(_totalPL)}',
+                                      style: TextStyle(
+                                          color: isProfit
+                                              ? const Color(0xFF00C853)
+                                              : Colors.red.shade300,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '(${isProfit ? '+' : ''}${_totalPLPercent.toStringAsFixed(2)}%)',
+                                      style: TextStyle(
+                                          color: isProfit
+                                              ? const Color(0xFF00C853)
+                                              : Colors.red.shade300,
+                                          fontSize: 12),
+                                    ),
+                                  ],
+                                )
+                              else
+                                const Text('—',
                                     style: TextStyle(
-                                        color: isProfit
-                                            ? const Color(0xFF00C853)
-                                            : Colors.red.shade300,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '(${isProfit ? '+' : ''}${_totalPLPercent.toStringAsFixed(2)}%)',
-                                    style: TextStyle(
-                                        color: isProfit
-                                            ? const Color(0xFF00C853)
-                                            : Colors.red.shade300,
-                                        fontSize: 12),
-                                  ),
-                                ],
-                              ),
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.w600)),
                             ],
                           ),
                         ),
@@ -291,8 +338,64 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 16)),
                       const SizedBox(height: 12),
-                      _buildTextField(_symbolController,
-                          'NSE Symbol (e.g. RELIANCE)'),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTextField(
+                            _symbolController,
+                            'Search company name...',
+                            onChanged: (value) {
+                              _nameController.text = '';
+                              _updatePortfolioSuggestions(value);
+                            },
+                          ),
+                          if (_showSuggestions)
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                      color:
+                                          Colors.black.withOpacity(0.08),
+                                      blurRadius: 8),
+                                ],
+                              ),
+                              child: Column(
+                                children:
+                                    _stockSuggestions.map((entry) {
+                                  return ListTile(
+                                    leading: const Icon(Icons.search,
+                                        color: Color(0xFF1B5E20),
+                                        size: 18),
+                                    title: Text(
+                                      entry.key[0].toUpperCase() +
+                                          entry.key.substring(1),
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    trailing: Text(
+                                      entry.value.replaceAll('.NS', ''),
+                                      style: TextStyle(
+                                          color: Colors.grey.shade500,
+                                          fontSize: 12),
+                                    ),
+                                    onTap: () {
+                                      setState(() {
+                                        _symbolController.text =
+                                            entry.value;
+                                        _nameController.text =
+                                            entry.key[0].toUpperCase() +
+                                                entry.key.substring(1);
+                                        _showSuggestions = false;
+                                        _stockSuggestions = [];
+                                      });
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                        ],
+                      ),
                       _buildTextField(_nameController, 'Company Name'),
                       _buildTextField(_buyPriceController, 'Buy Price (₹)',
                           isNumber: true),
@@ -320,15 +423,41 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   ),
                 ),
 
+              // Empty state
+              if (_portfolio.isEmpty && !_showAddForm)
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    children: [
+                      Icon(Icons.pie_chart_outline,
+                          size: 64, color: Colors.grey.shade300),
+                      const SizedBox(height: 16),
+                      const Text('No stocks yet',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1A1A1A))),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tap + to add your first stock',
+                        style: TextStyle(
+                            color: Colors.grey.shade500, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Stock list
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Holdings',
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
-              const SizedBox(height: 8),
-              ..._portfolio.map((stock) => _buildStockCard(stock)),
+              if (_portfolio.isNotEmpty) ...[
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Holdings',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+                const SizedBox(height: 8),
+                ..._portfolio.map((stock) => _buildStockCard(stock)),
+              ],
             ],
           ),
         ),
@@ -337,13 +466,14 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
   }
 
   Widget _buildTextField(TextEditingController controller, String hint,
-      {bool isNumber = false}) {
+      {bool isNumber = false, Function(String)? onChanged}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: controller,
         keyboardType:
             isNumber ? TextInputType.number : TextInputType.text,
+        onChanged: onChanged,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle:

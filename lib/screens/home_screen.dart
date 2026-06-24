@@ -8,6 +8,7 @@ import 'compare_screen.dart';
 import 'portfolio_screen.dart';
 import 'news_screen.dart';
 import 'profile_screen.dart';
+import 'package:flutter/animation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final StockService _stockService = StockService();
   List<StockData> _stocks = [];
   bool _isLoading = true;
+  Map<String, StockData> _indices = {};
 
   final Map<String, List<Map<String, String>>> _sectorStocks = {
     'IT': [
@@ -94,6 +96,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     _loadStocks();
+    _loadIndices();
+  }
+
+  Future<void> _loadIndices() async {
+    try {
+      final indices = await _stockService.getIndices();
+      setState(() => _indices = indices);
+    } catch (e) {
+      print('Error loading indices: $e');
+    }
   }
 
   Future<void> _loadStocks() async {
@@ -155,6 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
         slivers: [
           _buildHeader(),
           SliverToBoxAdapter(child: _buildMarketStatus()),
+          SliverToBoxAdapter(child: _buildIndexCard()),
           SliverToBoxAdapter(child: _buildSearchBar()),
           SliverToBoxAdapter(child: _buildPortfolioCard()),
           SliverToBoxAdapter(child: _buildSectionTitle('Top Stocks')),
@@ -273,7 +286,90 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+Widget _buildIndexCard() {
+    if (_indices.isEmpty) return const SizedBox.shrink();
 
+    final nifty = _indices['Nifty 50'];
+    final sensex = _indices['Sensex'];
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          if (nifty != null)
+            Expanded(
+              child: _buildIndexItem('Nifty 50', nifty),
+            ),
+          if (nifty != null && sensex != null)
+            Container(
+              width: 1,
+              height: 40,
+              color: Colors.grey.shade200,
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+            ),
+          if (sensex != null)
+            Expanded(
+              child: _buildIndexItem('Sensex', sensex),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIndexItem(String name, StockData data) {
+    final isPositive = data.changePercent >= 0;
+    final color =
+        isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(name,
+            style: TextStyle(
+                color: Colors.grey.shade500,
+                fontSize: 12,
+                fontWeight: FontWeight.w500)),
+        const SizedBox(height: 4),
+        Text(
+          data.currentPrice.toStringAsFixed(2),
+          style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Color(0xFF1A1A1A)),
+        ),
+        const SizedBox(height: 2),
+        Row(
+          children: [
+            Icon(
+              isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+              size: 12,
+              color: color,
+            ),
+            const SizedBox(width: 2),
+            Text(
+              '${isPositive ? '+' : ''}${data.changePercent.toStringAsFixed(2)}%',
+              style: TextStyle(
+                  color: color,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
   Widget _buildSearchBar() {
     return GestureDetector(
       onTap: () => Navigator.push(context,
@@ -544,11 +640,13 @@ class _HomeScreenState extends State<HomeScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('₹${stock.currentPrice.toStringAsFixed(2)}',
+                AnimatedPrice(
+                    price: stock.currentPrice,
                     style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 15,
-                        color: Color(0xFF1A1A1A))),
+                        color: Color(0xFF1A1A1A)),
+                  ),
                 const SizedBox(height: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -612,6 +710,70 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'News'),
         ],
       ),
+    );
+  }
+}
+class AnimatedPrice extends StatefulWidget {
+  final double price;
+  final TextStyle style;
+
+  const AnimatedPrice({
+    super.key,
+    required this.price,
+    required this.style,
+  });
+
+  @override
+  State<AnimatedPrice> createState() => _AnimatedPriceState();
+}
+
+class _AnimatedPriceState extends State<AnimatedPrice>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _animation = Tween<double>(begin: 0, end: widget.price).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+    _controller.forward();
+  }
+
+  @override
+  void didUpdateWidget(AnimatedPrice oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.price != widget.price) {
+      _animation = Tween<double>(
+              begin: oldWidget.price, end: widget.price)
+          .animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+      );
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Text(
+          '₹${_animation.value.toStringAsFixed(2)}',
+          style: widget.style,
+        );
+      },
     );
   }
 }
