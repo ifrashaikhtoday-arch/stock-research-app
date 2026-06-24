@@ -65,6 +65,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (error == null && mounted) {
+      // NEW: Save this device's FCM token so we can send push
+      // notifications (like price alerts) to this user later.
+      await _authService.registerFcmToken();
+
       // Check if onboarding is done
       final onboardingDone = await _authService.hasCompletedOnboarding();
       if (mounted) {
@@ -117,6 +121,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     if (error == null && mounted) {
+      // NEW: Save this device's FCM token so we can send push
+      // notifications (like price alerts) to this user later.
+      await _authService.registerFcmToken();
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
