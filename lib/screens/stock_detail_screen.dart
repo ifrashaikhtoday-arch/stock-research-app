@@ -41,6 +41,13 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   void initState() {
     super.initState();
     _loadStockData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final watchlistData = Provider.of<WatchlistData>(context, listen: false);
+      setState(() {
+        _isSaved = watchlistData.stocks
+            .any((s) => s.symbol == widget.symbol);
+      });
+    });
   }
 
   Future<void> _loadStockData({String period = '1mo'}) async {
@@ -283,25 +290,35 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
           IconButton(
             icon: Icon(
               _isSaved ? Icons.bookmark : Icons.bookmark_add_outlined,
-              color: _isSaved ? Colors.yellow : theme.colorScheme.onPrimary,
+              color: _isSaved ? Colors.amber : theme.colorScheme.onPrimary,
             ),
             onPressed: () {
-              if (_isSaved) return;
-              setState(() => _isSaved = true);
-
-              // Shared watchlist mein actually add karo
               final watchlistData =
                   Provider.of<WatchlistData>(context, listen: false);
-              watchlistData.addStock(WatchlistStock(
-                symbol: widget.symbol,
-                name: widget.companyName,
-                price: _stockData?.currentPrice ?? 0,
-                changePercent: _stockData?.changePercent ?? 0,
-              ));
-
-              _showToast(context, '${widget.companyName} added to watchlist!',
-                  theme.colorScheme.primary,
-                  showUndo: true);
+              if (_isSaved) {
+                // Remove from watchlist
+                setState(() => _isSaved = false);
+                final index = watchlistData.stocks
+                    .indexWhere((s) => s.symbol == widget.symbol);
+                if (index != -1) watchlistData.removeStock(index);
+                _showToast(context,
+                    '${widget.companyName} removed from watchlist',
+                    Colors.grey,
+                    showUndo: false);
+              } else {
+                // Add to watchlist
+                setState(() => _isSaved = true);
+                watchlistData.addStock(WatchlistStock(
+                  symbol: widget.symbol,
+                  name: widget.companyName,
+                  price: _stockData?.currentPrice ?? 0,
+                  changePercent: _stockData?.changePercent ?? 0,
+                ));
+                _showToast(context,
+                    '${widget.companyName} added to watchlist!',
+                    theme.colorScheme.primary,
+                    showUndo: true);
+              }
             },
           ),
         ],

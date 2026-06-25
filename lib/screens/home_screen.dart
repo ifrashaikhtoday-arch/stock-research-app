@@ -128,7 +128,7 @@ class _HomeScreenState extends State<HomeScreen> {
           MaterialPageRoute(builder: (context) => const SearchScreen()));
     } else if (index == 2) {
       Navigator.push(context,
-          MaterialPageRoute(builder: (context) => const WatchlistScreen()));
+          MaterialPageRoute(builder: (context) => WatchlistScreen()));
     } else if (index == 3) {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const NewsScreen()));
