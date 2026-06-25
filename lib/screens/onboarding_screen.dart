@@ -288,7 +288,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             textCapitalization: TextCapitalization.words,
             decoration: InputDecoration(
               labelText: 'Your name',
-              hintText: 'e.g. Daniya',
               prefixIcon: const Icon(Icons.person_outline, color: primaryGreen),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
