@@ -122,11 +122,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B5E20),
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('Search Stocks',
             style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -135,23 +136,27 @@ class _SearchScreenState extends State<SearchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            color: const Color(0xFF1B5E20),
+            color: theme.colorScheme.primary,
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: theme.cardColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TextField(
                 controller: _controller,
                 autofocus: true,
+                style: TextStyle(color: theme.colorScheme.onSurface),
                 decoration: InputDecoration(
                   hintText: 'Search by name or symbol...',
-                  hintStyle: TextStyle(color: Colors.grey.shade400),
-                  prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                  hintStyle: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant),
+                  prefixIcon: Icon(Icons.search,
+                      color: theme.colorScheme.onSurfaceVariant),
                   suffixIcon: _controller.text.isNotEmpty
                       ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          icon: Icon(Icons.clear,
+                              color: theme.colorScheme.onSurfaceVariant),
                           onPressed: () {
                             _controller.clear();
                             setState(() {
@@ -163,7 +168,8 @@ class _SearchScreenState extends State<SearchScreen> {
                         )
                       : null,
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                  contentPadding:
+                      const EdgeInsets.symmetric(vertical: 14),
                 ),
                 onChanged: (value) {
                   setState(() {});
@@ -179,23 +185,23 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Live suggestions while typing
                   if (_suggestions.isNotEmpty) ...[
-                    const Text('Suggestions',
+                    Text('Suggestions',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: theme.colorScheme.onSurface)),
                     const SizedBox(height: 8),
-                    ..._suggestions.map((entry) => _buildSuggestionTile(
-                        entry.key, entry.value)),
+                    ..._suggestions.map((entry) =>
+                        _buildSuggestionTile(theme, entry.key, entry.value)),
                     const SizedBox(height: 20),
                   ],
-
                   if (_isLoading)
-                    const Center(
+                    Center(
                       child: Padding(
-                        padding: EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(20),
                         child: CircularProgressIndicator(
-                            color: Color(0xFF1B5E20)),
+                            color: theme.colorScheme.primary),
                       ),
                     ),
                   if (_notFound)
@@ -207,7 +213,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline, color: Colors.red.shade400),
+                          Icon(Icons.info_outline,
+                              color: Colors.red.shade400),
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text(
@@ -219,29 +226,32 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                     ),
                   if (_result != null) ...[
-                    const Text('Result',
+                    Text('Result',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: theme.colorScheme.onSurface)),
                     const SizedBox(height: 8),
-                    _buildResultCard(_result!),
+                    _buildResultCard(theme, _result!),
                     const SizedBox(height: 20),
                   ],
-
-                  // Recent searches
                   if (_suggestions.isEmpty &&
                       _result == null &&
                       _recentSearches.isNotEmpty) ...[
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Recent Searches',
+                        Text('Recent Searches',
                             style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: theme.colorScheme.onSurface)),
                         GestureDetector(
                           onTap: _clearRecentSearches,
                           child: Text('Clear',
                               style: TextStyle(
-                                  color: Colors.grey.shade500, fontSize: 13)),
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  fontSize: 13)),
                         ),
                       ],
                     ),
@@ -259,18 +269,22 @@ class _SearchScreenState extends State<SearchScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardColor,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: Colors.grey.shade200),
+                              border: Border.all(
+                                  color: theme.colorScheme.outlineVariant),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(Icons.history,
-                                    size: 14, color: Colors.grey.shade500),
+                                    size: 14,
+                                    color: theme.colorScheme.onSurfaceVariant),
                                 const SizedBox(width: 6),
                                 Text(name,
-                                    style: const TextStyle(fontSize: 13)),
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        color: theme.colorScheme.onSurface)),
                               ],
                             ),
                           ),
@@ -279,11 +293,12 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                     const SizedBox(height: 20),
                   ],
-
                   if (_suggestions.isEmpty) ...[
-                    const Text('Popular Stocks',
+                    Text('Popular Stocks',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: theme.colorScheme.onSurface)),
                     const SizedBox(height: 12),
                     GridView.builder(
                       shrinkWrap: true,
@@ -302,18 +317,18 @@ class _SearchScreenState extends State<SearchScreen> {
                               _popularStocks[index]['symbol']!),
                           child: Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardColor,
                               borderRadius: BorderRadius.circular(10),
-                              border:
-                                  Border.all(color: Colors.grey.shade200),
+                              border: Border.all(
+                                  color: theme.colorScheme.outlineVariant),
                             ),
                             child: Center(
                               child: Text(
                                 _popularStocks[index]['name']!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 12,
-                                  color: Color(0xFF1B5E20),
+                                  color: theme.colorScheme.primary,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -332,7 +347,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildSuggestionTile(String name, String symbol) {
+  Widget _buildSuggestionTile(ThemeData theme, String name, String symbol) {
     return GestureDetector(
       onTap: () {
         _controller.text = name;
@@ -340,9 +355,10 @@ class _SearchScreenState extends State<SearchScreen> {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -351,18 +367,22 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.search, size: 18, color: Colors.grey.shade400),
+            Icon(Icons.search,
+                size: 18, color: theme.colorScheme.onSurfaceVariant),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 name[0].toUpperCase() + name.substring(1),
-                style: const TextStyle(
-                    fontWeight: FontWeight.w500, fontSize: 14),
+                style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: theme.colorScheme.onSurface),
               ),
             ),
             Text(
               symbol.replaceAll('.NS', ''),
-              style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+              style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
             ),
           ],
         ),
@@ -370,7 +390,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildResultCard(StockData stock) {
+  Widget _buildResultCard(ThemeData theme, StockData stock) {
     final isPositive = stock.changePercent >= 0;
     final color =
         isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
@@ -390,7 +410,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -405,7 +425,7 @@ class _SearchScreenState extends State<SearchScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF1B5E20).withOpacity(0.1),
+                color: theme.colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
@@ -416,8 +436,8 @@ class _SearchScreenState extends State<SearchScreen> {
                           .replaceAll('.NS', '')
                           .length
                           .clamp(0, 3)),
-                  style: const TextStyle(
-                      color: Color(0xFF1B5E20),
+                  style: TextStyle(
+                      color: theme.colorScheme.primary,
                       fontWeight: FontWeight.bold,
                       fontSize: 11),
                 ),
@@ -429,13 +449,16 @@ class _SearchScreenState extends State<SearchScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(stock.companyName,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w600, fontSize: 14),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: theme.colorScheme.onSurface),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                   Text(stock.symbol.replaceAll('.NS', ''),
                       style: TextStyle(
-                          color: Colors.grey.shade500, fontSize: 12)),
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12)),
                 ],
               ),
             ),
@@ -443,8 +466,10 @@ class _SearchScreenState extends State<SearchScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text('₹${stock.currentPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 15)),
+                    style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                        color: theme.colorScheme.onSurface)),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(

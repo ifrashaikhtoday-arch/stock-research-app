@@ -87,11 +87,12 @@ class _CompareScreenState extends State<CompareScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B5E20),
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('Compare Stocks',
             style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -101,114 +102,116 @@ class _CompareScreenState extends State<CompareScreen> {
           if (_stock1 != null) await _searchStock(1, _stock1!.symbol);
           if (_stock2 != null) await _searchStock(2, _stock2!.symbol);
         },
-        color: const Color(0xFF1B5E20),
+        color: theme.colorScheme.primary,
         child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Search bars
-            Row(
-              children: [
-                Expanded(child: _buildSearchBox(1, _controller1)),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1B5E20),
-                    borderRadius: BorderRadius.circular(8),
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(child: _buildSearchBox(theme, 1, _controller1)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('VS',
+                        style: TextStyle(
+                            color: theme.colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold)),
                   ),
-                  child: const Text('VS',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(width: 8),
-                Expanded(child: _buildSearchBox(2, _controller2)),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // Stock name headers
-            if (_stock1 != null || _stock2 != null)
-              _buildStockHeaders(),
-
-            const SizedBox(height: 16),
-
-            // Comparison rows
-            if (_stock1 != null || _stock2 != null) ...[
-              _buildCompareCard('Current Price',
-                  _stock1 != null ? formatRupee(_stock1!.currentPrice) : '-',
-                  _stock2 != null ? formatRupee(_stock2!.currentPrice) : '-',
-                  higherIsBetter: true,
-                  num1: _stock1?.currentPrice,
-                  num2: _stock2?.currentPrice),
-              const SizedBox(height: 10),
-              _buildCompareCard('Today\'s Change',
-                  _stock1 != null
-                      ? '${_stock1!.changePercent >= 0 ? '+' : ''}${_stock1!.changePercent}%'
-                      : '-',
-                  _stock2 != null
-                      ? '${_stock2!.changePercent >= 0 ? '+' : ''}${_stock2!.changePercent}%'
-                      : '-',
-                  higherIsBetter: true,
-                  num1: _stock1?.changePercent,
-                  num2: _stock2?.changePercent,
-                  isPercent: true),
-              const SizedBox(height: 10),
-              _buildCompareCard('P/E Ratio',
-                  _stock1 != null
-                      ? _stock1!.peRatio.toStringAsFixed(2)
-                      : '-',
-                  _stock2 != null
-                      ? _stock2!.peRatio.toStringAsFixed(2)
-                      : '-',
-                  higherIsBetter: false,
-                  num1: _stock1?.peRatio,
-                  num2: _stock2?.peRatio),
-              const SizedBox(height: 10),
-              _buildCompareCard('52W High',
-                  _stock1 != null ? formatRupee(_stock1!.high52Week) : '-',
-                  _stock2 != null ? formatRupee(_stock2!.high52Week) : '-',
-                  higherIsBetter: true,
-                  num1: _stock1?.high52Week,
-                  num2: _stock2?.high52Week),
-              const SizedBox(height: 10),
-              _buildCompareCard('52W Low',
-                  _stock1 != null ? formatRupee(_stock1!.low52Week) : '-',
-                  _stock2 != null ? formatRupee(_stock2!.low52Week) : '-',
-                  higherIsBetter: false,
-                  num1: _stock1?.low52Week,
-                  num2: _stock2?.low52Week),
-            ],
-
-            // Empty state
-            if (_stock1 == null && _stock2 == null)
-              Container(
-                margin: const EdgeInsets.only(top: 40),
-                child: Column(
-                  children: [
-                    Icon(Icons.compare_arrows,
-                        size: 64, color: Colors.grey.shade300),
-                    const SizedBox(height: 16),
-                    Text('Search two stocks to compare',
-                        style: TextStyle(
-                            color: Colors.grey.shade500, fontSize: 16)),
-                    const SizedBox(height: 8),
-                    Text('Example: Reliance vs TCS',
-                        style: TextStyle(
-                            color: Colors.grey.shade400, fontSize: 13)),
-                  ],
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildSearchBox(theme, 2, _controller2)),
+                ],
               ),
-          ],
+
+              const SizedBox(height: 20),
+
+              if (_stock1 != null || _stock2 != null)
+                _buildStockHeaders(theme),
+
+              const SizedBox(height: 16),
+
+              if (_stock1 != null || _stock2 != null) ...[
+                _buildCompareCard(theme, 'Current Price',
+                    _stock1 != null ? formatRupee(_stock1!.currentPrice) : '-',
+                    _stock2 != null ? formatRupee(_stock2!.currentPrice) : '-',
+                    higherIsBetter: true,
+                    num1: _stock1?.currentPrice,
+                    num2: _stock2?.currentPrice),
+                const SizedBox(height: 10),
+                _buildCompareCard(theme, 'Today\'s Change',
+                    _stock1 != null
+                        ? '${_stock1!.changePercent >= 0 ? '+' : ''}${_stock1!.changePercent}%'
+                        : '-',
+                    _stock2 != null
+                        ? '${_stock2!.changePercent >= 0 ? '+' : ''}${_stock2!.changePercent}%'
+                        : '-',
+                    higherIsBetter: true,
+                    num1: _stock1?.changePercent,
+                    num2: _stock2?.changePercent),
+                const SizedBox(height: 10),
+                _buildCompareCard(theme, 'P/E Ratio',
+                    _stock1 != null
+                        ? _stock1!.peRatio.toStringAsFixed(2)
+                        : '-',
+                    _stock2 != null
+                        ? _stock2!.peRatio.toStringAsFixed(2)
+                        : '-',
+                    higherIsBetter: false,
+                    num1: _stock1?.peRatio,
+                    num2: _stock2?.peRatio),
+                const SizedBox(height: 10),
+                _buildCompareCard(theme, '52W High',
+                    _stock1 != null ? formatRupee(_stock1!.high52Week) : '-',
+                    _stock2 != null ? formatRupee(_stock2!.high52Week) : '-',
+                    higherIsBetter: true,
+                    num1: _stock1?.high52Week,
+                    num2: _stock2?.high52Week),
+                const SizedBox(height: 10),
+                _buildCompareCard(theme, '52W Low',
+                    _stock1 != null ? formatRupee(_stock1!.low52Week) : '-',
+                    _stock2 != null ? formatRupee(_stock2!.low52Week) : '-',
+                    higherIsBetter: false,
+                    num1: _stock1?.low52Week,
+                    num2: _stock2?.low52Week),
+              ],
+
+              if (_stock1 == null && _stock2 == null)
+                Container(
+                  margin: const EdgeInsets.only(top: 40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.compare_arrows,
+                          size: 64,
+                          color: theme.colorScheme.onSurfaceVariant
+                              .withOpacity(0.3)),
+                      const SizedBox(height: 16),
+                      Text('Search two stocks to compare',
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontSize: 16)),
+                      const SizedBox(height: 8),
+                      Text('Example: Reliance vs TCS',
+                          style: TextStyle(
+                              color: theme.colorScheme.onSurfaceVariant
+                                  .withOpacity(0.6),
+                              fontSize: 13)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
 
-  Widget _buildSearchBox(int number, TextEditingController controller) {
+  Widget _buildSearchBox(
+      ThemeData theme, int number, TextEditingController controller) {
     final isLoading = number == 1 ? _isLoading1 : _isLoading2;
     final error = number == 1 ? _error1 : _error2;
 
@@ -217,7 +220,7 @@ class _CompareScreenState extends State<CompareScreen> {
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
@@ -228,28 +231,29 @@ class _CompareScreenState extends State<CompareScreen> {
           ),
           child: TextField(
             controller: controller,
+            style: TextStyle(
+                fontSize: 13, color: theme.colorScheme.onSurface),
             decoration: InputDecoration(
-              hintText: 'Stock ${number}...',
-              hintStyle:
-                  TextStyle(color: Colors.grey.shade400, fontSize: 13),
+              hintText: 'Stock $number...',
+              hintStyle: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
               prefixIcon: isLoading
-                  ? const Padding(
-                      padding: EdgeInsets.all(12),
+                  ? Padding(
+                      padding: const EdgeInsets.all(12),
                       child: SizedBox(
                         width: 16,
                         height: 16,
                         child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Color(0xFF1B5E20)),
+                            color: theme.colorScheme.primary),
                       ),
                     )
-                  : const Icon(Icons.search,
-                      color: Colors.grey, size: 18),
+                  : Icon(Icons.search,
+                      color: theme.colorScheme.onSurfaceVariant, size: 18),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
             ),
             onSubmitted: (value) => _searchStock(number, value),
-            style: const TextStyle(fontSize: 13),
           ),
         ),
         if (error != null)
@@ -263,21 +267,21 @@ class _CompareScreenState extends State<CompareScreen> {
     );
   }
 
-  Widget _buildStockHeaders() {
+  Widget _buildStockHeaders(ThemeData theme) {
     return Row(
       children: [
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF1B5E20).withOpacity(0.1),
+              color: theme.colorScheme.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               _stock1?.companyName ?? 'Stock 1',
-              style: const TextStyle(
+              style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1B5E20),
+                  color: theme.colorScheme.primary,
                   fontSize: 13),
               textAlign: TextAlign.center,
               maxLines: 2,
@@ -309,7 +313,8 @@ class _CompareScreenState extends State<CompareScreen> {
     );
   }
 
-   Widget _buildCompareCard(
+  Widget _buildCompareCard(
+    ThemeData theme,
     String label,
     String display1,
     String display2, {
@@ -322,9 +327,8 @@ class _CompareScreenState extends State<CompareScreen> {
     Color? color2;
 
     if (num1 != null && num2 != null && num1 != num2) {
-      final stock1Better = higherIsBetter
-          ? num1 > num2
-          : num1 < num2;
+      final stock1Better =
+          higherIsBetter ? num1 > num2 : num1 < num2;
       color1 = stock1Better
           ? const Color(0xFF00C853)
           : const Color(0xFFFF3B30);
@@ -336,7 +340,7 @@ class _CompareScreenState extends State<CompareScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -349,7 +353,7 @@ class _CompareScreenState extends State<CompareScreen> {
         children: [
           Text(label,
               style: TextStyle(
-                  color: Colors.grey.shade500,
+                  color: theme.colorScheme.onSurfaceVariant,
                   fontSize: 12,
                   fontWeight: FontWeight.w500)),
           const SizedBox(height: 10),
@@ -361,7 +365,7 @@ class _CompareScreenState extends State<CompareScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: color1 ?? const Color(0xFF1A1A1A),
+                    color: color1 ?? theme.colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -369,14 +373,14 @@ class _CompareScreenState extends State<CompareScreen> {
               Container(
                   width: 1,
                   height: 24,
-                  color: Colors.grey.shade200),
+                  color: theme.colorScheme.outlineVariant),
               Expanded(
                 child: Text(
                   display2,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 15,
-                    color: color2 ?? const Color(0xFF1A1A1A),
+                    color: color2 ?? theme.colorScheme.onSurface,
                   ),
                   textAlign: TextAlign.center,
                 ),

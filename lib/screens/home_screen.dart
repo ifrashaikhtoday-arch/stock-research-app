@@ -9,7 +9,6 @@ import 'portfolio_screen.dart';
 import 'news_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
-import 'package:flutter/animation.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -162,40 +161,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: RefreshIndicator(
         onRefresh: _loadStocks,
-        color: const Color(0xFF1B5E20),
+        color: theme.colorScheme.primary,
         child: CustomScrollView(
-        slivers: [
-          _buildHeader(),
-          SliverToBoxAdapter(child: _buildMarketStatus()),
-          SliverToBoxAdapter(child: _buildIndexCard()),
-          SliverToBoxAdapter(child: _buildSearchBar()),
-          SliverToBoxAdapter(child: _buildPortfolioCard()),
-          SliverToBoxAdapter(child: _buildSectionTitle('Top Stocks')),
-          SliverToBoxAdapter(child: _buildStockList()),
-        ],
+          slivers: [
+            _buildHeader(theme),
+            SliverToBoxAdapter(child: _buildMarketStatus(theme)),
+            SliverToBoxAdapter(child: _buildIndexCard(theme)),
+            SliverToBoxAdapter(child: _buildSearchBar(theme)),
+            SliverToBoxAdapter(child: _buildPortfolioCard(theme)),
+            SliverToBoxAdapter(child: _buildSectionTitle(theme, 'Top Stocks')),
+            SliverToBoxAdapter(child: _buildStockList(theme)),
+          ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(theme),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ThemeData theme) {
     return SliverAppBar(
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      backgroundColor: const Color(0xFF1B5E20),
+      backgroundColor: theme.colorScheme.primary,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+              colors: [
+                theme.colorScheme.primary,
+                theme.colorScheme.primary.withOpacity(0.8),
+              ],
             ),
           ),
           child: SafeArea(
@@ -213,16 +216,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           Text(
                             _getGreeting() + ' 👋',
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: TextStyle(
+                              color: theme.colorScheme.onPrimary
+                                  .withOpacity(0.7),
                               fontSize: 14,
                             ),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'StockSense',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: theme.colorScheme.onPrimary,
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
                             ),
@@ -239,11 +243,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           width: 42,
                           height: 42,
                           decoration: BoxDecoration(
-                            color: Colors.white24,
+                            color: theme.colorScheme.onPrimary
+                                .withOpacity(0.15),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.person,
-                              color: Colors.white, size: 24),
+                          child: Icon(Icons.person,
+                              color: theme.colorScheme.onPrimary, size: 24),
                         ),
                       ),
                     ],
@@ -257,12 +262,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMarketStatus() {
+  Widget _buildMarketStatus(ThemeData theme) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -274,23 +279,26 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.access_time,
-              color: Color(0xFF2E7D32), size: 18),
+          Icon(Icons.access_time,
+              color: theme.colorScheme.primary, size: 18),
           const SizedBox(width: 8),
           Text(
             _getMarketStatus(),
-            style: const TextStyle(
-                fontWeight: FontWeight.w600, fontSize: 14),
+            style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: theme.colorScheme.onSurface),
           ),
           const Spacer(),
           Text('NSE • BSE',
-              style:
-                  TextStyle(color: Colors.grey.shade500, fontSize: 12)),
+              style: TextStyle(
+                  color: theme.colorScheme.onSurfaceVariant, fontSize: 12)),
         ],
       ),
     );
   }
-Widget _buildIndexCard() {
+
+  Widget _buildIndexCard(ThemeData theme) {
     if (_indices.isEmpty) return const SizedBox.shrink();
 
     final nifty = _indices['Nifty 50'];
@@ -300,7 +308,7 @@ Widget _buildIndexCard() {
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -313,26 +321,22 @@ Widget _buildIndexCard() {
       child: Row(
         children: [
           if (nifty != null)
-            Expanded(
-              child: _buildIndexItem('Nifty 50', nifty),
-            ),
+            Expanded(child: _buildIndexItem(theme, 'Nifty 50', nifty)),
           if (nifty != null && sensex != null)
             Container(
               width: 1,
               height: 40,
-              color: Colors.grey.shade200,
+              color: theme.colorScheme.outlineVariant,
               margin: const EdgeInsets.symmetric(horizontal: 12),
             ),
           if (sensex != null)
-            Expanded(
-              child: _buildIndexItem('Sensex', sensex),
-            ),
+            Expanded(child: _buildIndexItem(theme, 'Sensex', sensex)),
         ],
       ),
     );
   }
 
-  Widget _buildIndexItem(String name, StockData data) {
+  Widget _buildIndexItem(ThemeData theme, String name, StockData data) {
     final isPositive = data.changePercent >= 0;
     final color =
         isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
@@ -342,16 +346,16 @@ Widget _buildIndexCard() {
       children: [
         Text(name,
             style: TextStyle(
-                color: Colors.grey.shade500,
+                color: theme.colorScheme.onSurfaceVariant,
                 fontSize: 12,
                 fontWeight: FontWeight.w500)),
         const SizedBox(height: 4),
         Text(
           data.currentPrice.toStringAsFixed(2),
-          style: const TextStyle(
+          style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
-              color: Color(0xFF1A1A1A)),
+              color: theme.colorScheme.onSurface),
         ),
         const SizedBox(height: 2),
         Row(
@@ -365,16 +369,15 @@ Widget _buildIndexCard() {
             Text(
               '${isPositive ? '+' : ''}${data.changePercent.toStringAsFixed(2)}%',
               style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600),
+                  color: color, fontSize: 12, fontWeight: FontWeight.w600),
             ),
           ],
         ),
       ],
     );
   }
-  Widget _buildSearchBar() {
+
+  Widget _buildSearchBar(ThemeData theme) {
     return GestureDetector(
       onTap: () => Navigator.push(context,
           MaterialPageRoute(builder: (context) => const SearchScreen())),
@@ -383,7 +386,7 @@ Widget _buildIndexCard() {
         padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
@@ -395,37 +398,41 @@ Widget _buildIndexCard() {
         ),
         child: Row(
           children: [
-            Icon(Icons.search, color: Colors.grey.shade400, size: 20),
+            Icon(Icons.search,
+                color: theme.colorScheme.onSurfaceVariant, size: 20),
             const SizedBox(width: 10),
             Text('Search stocks, companies...',
                 style: TextStyle(
-                    color: Colors.grey.shade400, fontSize: 14)),
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 14)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPortfolioCard() {
+  Widget _buildPortfolioCard(ThemeData theme) {
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
-            builder: (context) => const PortfolioScreen()),
+        MaterialPageRoute(builder: (context) => const PortfolioScreen()),
       ),
       child: Container(
         margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+            colors: [
+              theme.colorScheme.primary,
+              theme.colorScheme.primary.withOpacity(0.8),
+            ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1B5E20).withOpacity(0.3),
+              color: theme.colorScheme.primary.withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -437,48 +444,50 @@ Widget _buildIndexCard() {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: theme.colorScheme.onPrimary.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.pie_chart_outline,
-                  color: Colors.white, size: 24),
+              child: Icon(Icons.pie_chart_outline,
+                  color: theme.colorScheme.onPrimary, size: 24),
             ),
             const SizedBox(width: 14),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('My Portfolio',
                       style: TextStyle(
-                          color: Colors.white,
+                          color: theme.colorScheme.onPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 16)),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text('Track your investments & P&L',
                       style: TextStyle(
-                          color: Colors.white70, fontSize: 12)),
+                          color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                          fontSize: 12)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios,
-                color: Colors.white70, size: 16),
+            Icon(Icons.arrow_forward_ios,
+                color: theme.colorScheme.onPrimary.withOpacity(0.7),
+                size: 16),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(ThemeData theme, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A))),
+                  color: theme.colorScheme.onSurface)),
           GestureDetector(
             onTap: () => Navigator.push(
                 context,
@@ -487,7 +496,7 @@ Widget _buildIndexCard() {
             child: Text('Compare ⇄',
                 style: TextStyle(
                     fontSize: 13,
-                    color: Colors.green.shade700,
+                    color: theme.colorScheme.primary,
                     fontWeight: FontWeight.w600)),
           ),
         ],
@@ -495,23 +504,24 @@ Widget _buildIndexCard() {
     );
   }
 
-  Widget _buildStockList() {
+  Widget _buildStockList(ThemeData theme) {
     if (_isLoading) {
       return Column(
-        children: List.generate(4, (index) => _buildSkeletonCard()),
+        children: List.generate(4, (index) => _buildSkeletonCard(theme)),
       );
     }
     return Column(
-      children: _stocks.map((stock) => _buildStockCard(stock)).toList(),
+      children:
+          _stocks.map((stock) => _buildStockCard(theme, stock)).toList(),
     );
   }
 
-  Widget _buildSkeletonCard() {
+  Widget _buildSkeletonCard(ThemeData theme) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -526,7 +536,7 @@ Widget _buildIndexCard() {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: theme.colorScheme.surfaceVariant,
                   borderRadius: BorderRadius.circular(12))),
           const SizedBox(width: 12),
           Expanded(
@@ -537,14 +547,14 @@ Widget _buildIndexCard() {
                     height: 14,
                     width: 120,
                     decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: theme.colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(4))),
                 const SizedBox(height: 8),
                 Container(
                     height: 12,
                     width: 80,
                     decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: theme.colorScheme.surfaceVariant,
                         borderRadius: BorderRadius.circular(4))),
               ],
             ),
@@ -556,14 +566,14 @@ Widget _buildIndexCard() {
                   height: 14,
                   width: 70,
                   decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
+                      color: theme.colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(4))),
               const SizedBox(height: 8),
               Container(
                   height: 24,
                   width: 55,
                   decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
+                      color: theme.colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(6))),
             ],
           ),
@@ -572,7 +582,7 @@ Widget _buildIndexCard() {
     );
   }
 
-  Widget _buildStockCard(StockData stock) {
+  Widget _buildStockCard(ThemeData theme, StockData stock) {
     final isPositive = stock.changePercent >= 0;
     final color =
         isPositive ? const Color(0xFF00C853) : const Color(0xFFFF3B30);
@@ -594,7 +604,7 @@ Widget _buildIndexCard() {
         margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -609,14 +619,14 @@ Widget _buildIndexCard() {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFF1B5E20).withOpacity(0.1),
+                color: theme.colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Center(
                 child: Text(
                   symbol.substring(0, symbol.length.clamp(0, 3)),
-                  style: const TextStyle(
-                      color: Color(0xFF1B5E20),
+                  style: TextStyle(
+                      color: theme.colorScheme.primary,
                       fontWeight: FontWeight.bold,
                       fontSize: 11),
                 ),
@@ -628,16 +638,17 @@ Widget _buildIndexCard() {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(stock.companyName,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: Color(0xFF1A1A1A)),
+                          color: theme.colorScheme.onSurface),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
                   Text(symbol,
                       style: TextStyle(
-                          color: Colors.grey.shade500, fontSize: 12)),
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 12)),
                 ],
               ),
             ),
@@ -645,12 +656,12 @@ Widget _buildIndexCard() {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 AnimatedPrice(
-                    price: stock.currentPrice,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: Color(0xFF1A1A1A)),
-                  ),
+                  price: stock.currentPrice,
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: theme.colorScheme.onSurface),
+                ),
                 const SizedBox(height: 5),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -674,10 +685,10 @@ Widget _buildIndexCard() {
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(ThemeData theme) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         boxShadow: [
           BoxShadow(
               color: Colors.black.withOpacity(0.08),
@@ -688,8 +699,8 @@ Widget _buildIndexCard() {
       child: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onTabTapped,
-        selectedItemColor: const Color(0xFF1B5E20),
-        unselectedItemColor: Colors.grey.shade400,
+        selectedItemColor: theme.colorScheme.primary,
+        unselectedItemColor: theme.colorScheme.onSurfaceVariant,
         backgroundColor: Colors.transparent,
         elevation: 0,
         type: BottomNavigationBarType.fixed,
@@ -721,6 +732,7 @@ Widget _buildIndexCard() {
     );
   }
 }
+
 class AnimatedPrice extends StatefulWidget {
   final double price;
   final TextStyle style;
@@ -757,8 +769,7 @@ class _AnimatedPriceState extends State<AnimatedPrice>
   void didUpdateWidget(AnimatedPrice oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.price != widget.price) {
-      _animation = Tween<double>(
-              begin: oldWidget.price, end: widget.price)
+      _animation = Tween<double>(begin: oldWidget.price, end: widget.price)
           .animate(
         CurvedAnimation(parent: _controller, curve: Curves.easeOut),
       );

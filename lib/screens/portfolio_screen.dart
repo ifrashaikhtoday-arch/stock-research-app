@@ -151,10 +151,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     setState(() => _showAddForm = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Fetching live price...'),
-        backgroundColor: Color(0xFF1B5E20),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: const Text('Fetching live price...'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        duration: const Duration(seconds: 2),
       ),
     );
 
@@ -183,17 +183,20 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       _buyPriceController.clear();
       _quantityController.clear();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              '${stockData.companyName} added at ₹${stockData.currentPrice}'),
-          backgroundColor: const Color(0xFF1B5E20),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '${stockData.companyName} added at ₹${stockData.currentPrice}'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Could not fetch price. Check symbol and try again.'),
+          content:
+              Text('Could not fetch price. Check symbol and try again.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -202,13 +205,14 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isProfit = _totalPL >= 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1B5E20),
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
         title: const Text('My Portfolio',
             style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
@@ -222,7 +226,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _refreshPrices,
-        color: const Color(0xFF1B5E20),
+        color: theme.colorScheme.primary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -233,22 +237,24 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1B5E20),
+                  color: theme.colorScheme.primary,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Total Portfolio Value',
+                    Text('Total Portfolio Value',
                         style: TextStyle(
-                            color: Colors.white70, fontSize: 13)),
+                            color: theme.colorScheme.onPrimary
+                                .withOpacity(0.7),
+                            fontSize: 13)),
                     const SizedBox(height: 4),
                     Text(
                       _portfolio.isEmpty
                           ? '₹0.00'
                           : formatRupee(_currentValue),
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: theme.colorScheme.onPrimary,
                           fontSize: 28,
                           fontWeight: FontWeight.bold),
                     ),
@@ -259,15 +265,17 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Invested',
+                              Text('Invested',
                                   style: TextStyle(
-                                      color: Colors.white70, fontSize: 12)),
+                                      color: theme.colorScheme.onPrimary
+                                          .withOpacity(0.7),
+                                      fontSize: 12)),
                               Text(
                                   _portfolio.isEmpty
                                       ? '₹0.00'
                                       : formatRupee(_totalInvested),
-                                  style: const TextStyle(
-                                      color: Colors.white,
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onPrimary,
                                       fontWeight: FontWeight.w600)),
                             ],
                           ),
@@ -276,9 +284,11 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('P&L',
+                              Text('P&L',
                                   style: TextStyle(
-                                      color: Colors.white70, fontSize: 12)),
+                                      color: theme.colorScheme.onPrimary
+                                          .withOpacity(0.7),
+                                      fontSize: 12)),
                               if (_portfolio.isNotEmpty)
                                 Row(
                                   children: [
@@ -302,9 +312,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                                   ],
                                 )
                               else
-                                const Text('—',
+                                Text('—',
                                     style: TextStyle(
-                                        color: Colors.white70,
+                                        color: theme.colorScheme.onPrimary
+                                            .withOpacity(0.7),
                                         fontWeight: FontWeight.w600)),
                             ],
                           ),
@@ -323,7 +334,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   padding: const EdgeInsets.all(16),
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
@@ -334,14 +345,17 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Add Stock',
+                      Text('Add Stock',
                           style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: theme.colorScheme.onSurface)),
                       const SizedBox(height: 12),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildTextField(
+                            theme,
                             _symbolController,
                             'Search company name...',
                             onChanged: (value) {
@@ -352,7 +366,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                           if (_showSuggestions)
                             Container(
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: theme.cardColor,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
@@ -365,18 +379,22 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                                 children:
                                     _stockSuggestions.map((entry) {
                                   return ListTile(
-                                    leading: const Icon(Icons.search,
-                                        color: Color(0xFF1B5E20),
+                                    leading: Icon(Icons.search,
+                                        color: theme.colorScheme.primary,
                                         size: 18),
                                     title: Text(
                                       entry.key[0].toUpperCase() +
                                           entry.key.substring(1),
-                                      style: const TextStyle(fontSize: 14),
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          color:
+                                              theme.colorScheme.onSurface),
                                     ),
                                     trailing: Text(
                                       entry.value.replaceAll('.NS', ''),
                                       style: TextStyle(
-                                          color: Colors.grey.shade500,
+                                          color: theme.colorScheme
+                                              .onSurfaceVariant,
                                           fontSize: 12),
                                     ),
                                     onTap: () {
@@ -396,10 +414,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                             ),
                         ],
                       ),
-                      _buildTextField(_nameController, 'Company Name'),
-                      _buildTextField(_buyPriceController, 'Buy Price (₹)',
+                      _buildTextField(theme, _nameController, 'Company Name'),
+                      _buildTextField(theme, _buyPriceController, 'Buy Price (₹)',
                           isNumber: true),
-                      _buildTextField(_quantityController, 'Quantity',
+                      _buildTextField(theme, _quantityController, 'Quantity',
                           isNumber: true),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -407,8 +425,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                         child: ElevatedButton(
                           onPressed: () async => await _addStock(),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1B5E20),
-                            foregroundColor: Colors.white,
+                            backgroundColor: theme.colorScheme.primary,
+                            foregroundColor: theme.colorScheme.onPrimary,
                             padding:
                                 const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -430,18 +448,21 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   child: Column(
                     children: [
                       Icon(Icons.pie_chart_outline,
-                          size: 64, color: Colors.grey.shade300),
+                          size: 64,
+                          color: theme.colorScheme.onSurfaceVariant
+                              .withOpacity(0.3)),
                       const SizedBox(height: 16),
-                      const Text('No stocks yet',
+                      Text('No stocks yet',
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF1A1A1A))),
+                              color: theme.colorScheme.onSurface)),
                       const SizedBox(height: 8),
                       Text(
                         'Tap + to add your first stock',
                         style: TextStyle(
-                            color: Colors.grey.shade500, fontSize: 14),
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 14),
                       ),
                     ],
                   ),
@@ -449,14 +470,16 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
 
               // Stock list
               if (_portfolio.isNotEmpty) ...[
-                const Align(
+                Align(
                   alignment: Alignment.centerLeft,
                   child: Text('Holdings',
                       style: TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: theme.colorScheme.onSurface)),
                 ),
                 const SizedBox(height: 8),
-                ..._portfolio.map((stock) => _buildStockCard(stock)),
+                ..._portfolio.map((stock) => _buildStockCard(theme, stock)),
               ],
             ],
           ),
@@ -465,7 +488,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint,
+  Widget _buildTextField(
+      ThemeData theme, TextEditingController controller, String hint,
       {bool isNumber = false, Function(String)? onChanged}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -474,17 +498,20 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
         keyboardType:
             isNumber ? TextInputType.number : TextInputType.text,
         onChanged: onChanged,
+        style: TextStyle(color: theme.colorScheme.onSurface),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle:
-              TextStyle(color: Colors.grey.shade400, fontSize: 13),
+          hintStyle: TextStyle(
+              color: theme.colorScheme.onSurfaceVariant, fontSize: 13),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade200),
+            borderSide:
+                BorderSide(color: theme.colorScheme.outlineVariant),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(color: Colors.grey.shade200),
+            borderSide:
+                BorderSide(color: theme.colorScheme.outlineVariant),
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -493,7 +520,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     );
   }
 
-  Widget _buildStockCard(PortfolioStock stock) {
+  Widget _buildStockCard(ThemeData theme, PortfolioStock stock) {
     final color = stock.isProfit
         ? const Color(0xFF00C853)
         : const Color(0xFFFF3B30);
@@ -505,7 +532,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -522,7 +549,7 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1B5E20).withOpacity(0.1),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -533,8 +560,8 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                             .replaceAll('.NS', '')
                             .length
                             .clamp(0, 3)),
-                    style: const TextStyle(
-                        color: Color(0xFF1B5E20),
+                    style: TextStyle(
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.bold,
                         fontSize: 11),
                   ),
@@ -546,14 +573,17 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(stock.name,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 14),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: theme.colorScheme.onSurface),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                     Text(
                         '${stock.quantity} shares × ${formatRupee(stock.buyPrice)}',
                         style: TextStyle(
-                            color: Colors.grey.shade500, fontSize: 12)),
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 12)),
                   ],
                 ),
               ),
@@ -561,8 +591,10 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(formatRupee(stock.currentValue),
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 15)),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: theme.colorScheme.onSurface)),
                   Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 8, vertical: 3),
@@ -582,14 +614,15 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
             ],
           ),
           const SizedBox(height: 10),
-          Divider(color: Colors.grey.shade100, height: 1),
+          Divider(color: theme.colorScheme.outlineVariant, height: 1),
           const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _miniStat('Invested', formatRupee(stock.totalInvested)),
-              _miniStat('Current', formatRupee(stock.currentValue)),
+              _miniStat(theme, 'Invested', formatRupee(stock.totalInvested)),
+              _miniStat(theme, 'Current', formatRupee(stock.currentValue)),
               _miniStat(
+                  theme,
                   'P&L',
                   '${stock.isProfit ? '+' : ''}${formatRupee(stock.profitLoss)}',
                   color: color),
@@ -600,18 +633,19 @@ class _PortfolioScreenState extends State<PortfolioScreen> {
     );
   }
 
-  Widget _miniStat(String label, String value, {Color? color}) {
+  Widget _miniStat(ThemeData theme, String label, String value,
+      {Color? color}) {
     return Column(
       children: [
         Text(label,
-            style:
-                TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+            style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant, fontSize: 11)),
         const SizedBox(height: 2),
         Text(value,
             style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: color ?? const Color(0xFF1A1A1A))),
+                color: color ?? theme.colorScheme.onSurface)),
       ],
     );
   }

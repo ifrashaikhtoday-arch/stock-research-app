@@ -8,7 +8,7 @@ import '../data/stock_service.dart';
 import '../utils.dart';
 import 'package:provider/provider.dart';
 import '../data/watchlist_data.dart';
-
+import '../theme/app_theme.dart';
 class StockDetailScreen extends StatefulWidget {
   final String symbol;
   final String companyName;
