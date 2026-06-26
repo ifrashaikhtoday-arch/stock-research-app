@@ -1,101 +1,135 @@
+// lib/screens/settings_screen.dart
+//
+// StockSense - Settings Screen
+// Simple settings page. Includes a link to the Price Alerts screen.
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
-import '../theme/app_theme.dart';
+import 'alerts_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final themeNotifier = context.watch<ThemeNotifier>();
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        backgroundColor: const Color(0xFF1B5E20),
+        foregroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Settings',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                    child: Text(
-                      '🎨 App Theme',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
-                    child: Text(
-                      'Choose how StockSense looks across the whole app.',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                  _buildThemeOption(
-                    context,
-                    title: 'Green theme (default)',
-                    subtitle: 'StockSense classic green look',
-                    color: const Color(0xFF1B5E20),
-                    mode: AppThemeMode.green,
-                    current: themeNotifier.mode,
-                    onChanged: themeNotifier.setTheme,
-                  ),
-                  _buildThemeOption(
-                    context,
-                    title: 'Light mode',
-                    subtitle: 'Bright, neutral colors',
-                    color: Colors.blueGrey,
-                    mode: AppThemeMode.light,
-                    current: themeNotifier.mode,
-                    onChanged: themeNotifier.setTheme,
-                  ),
-                  _buildThemeOption(
-                    context,
-                    title: 'Dark mode',
-                    subtitle: 'Dark background, green accents',
-                    color: Colors.black87,
-                    mode: AppThemeMode.dark,
-                    current: themeNotifier.mode,
-                    onChanged: themeNotifier.setTheme,
+          // -- Notifications section --------------------------------------
+          _sectionLabel('Notifications'),
+          _settingsTile(
+            icon: Icons.notifications_active_outlined,
+            title: 'Price Alerts',
+            subtitle: 'View and manage your price alerts',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AlertsScreen(),
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // -- About section ----------------------------------------------
+          _sectionLabel('About'),
+          _settingsTile(
+            icon: Icons.info_outline_rounded,
+            title: 'About StockSense',
+            subtitle: 'Stock research for Indian investors',
+            onTap: () {
+              showAboutDialog(
+                context: context,
+                applicationName: 'StockSense',
+                applicationVersion: '1.0.0',
+                children: const [
+                  Text(
+                    'A stock research app for Indian investors. '
+                    'Prices may be delayed by 15-20 minutes.',
                   ),
                 ],
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildThemeOption(
-    BuildContext context, {
+  Widget _sectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Text(
+        text.toUpperCase(),
+        style: TextStyle(
+          color: Colors.grey.shade600,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _settingsTile({
+    required IconData icon,
     required String title,
     required String subtitle,
-    required Color color,
-    required AppThemeMode mode,
-    required AppThemeMode current,
-    required void Function(AppThemeMode) onChanged,
+    required VoidCallback onTap,
   }) {
-    return RadioListTile<AppThemeMode>(
-      value: mode,
-      groupValue: current,
-      onChanged: (value) {
-        if (value != null) onChanged(value);
-      },
-      title: Text(title),
-      subtitle: Text(subtitle),
-      secondary: CircleAvatar(backgroundColor: color, radius: 14),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: const Color(0xFF1B5E20).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: const Color(0xFF1B5E20), size: 22),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFF1A1A1A),
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+        ),
+        trailing: Icon(Icons.chevron_right_rounded,
+            color: Colors.grey.shade400),
+        onTap: onTap,
+      ),
     );
   }
 }
