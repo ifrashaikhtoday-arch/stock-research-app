@@ -18,7 +18,7 @@ class WatchlistScreen extends StatefulWidget {
 class _WatchlistScreenState extends State<WatchlistScreen> {
   SortOption _currentSort = SortOption.gainers;
 
-  // ── Returns the sorted list based on selected option ────────────────────
+  // -- Returns the sorted list based on selected option --------------------
   List<WatchlistStock> _getSortedStocks(List<WatchlistStock> stocks) {
     final sorted = List<WatchlistStock>.from(stocks);
     switch (_currentSort) {
@@ -35,7 +35,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     return sorted;
   }
 
-  // ── Remove with manual auto-dismiss timer ──────────────────────────────
+  // -- Remove with manual auto-dismiss timer ------------------------------
   void _removeStock(BuildContext context, WatchlistStock stock) {
     final watchlistData = Provider.of<WatchlistData>(context, listen: false);
     final realIndex = watchlistData.stocks.indexOf(stock);
@@ -74,7 +74,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     });
   }
 
-  // ── Confirm before deleting (long-press) ───────────────────────────────
+  // -- Confirm before deleting (long-press) -------------------------------
   Future<void> _confirmRemove(BuildContext context, WatchlistStock stock) async {
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
@@ -89,18 +89,19 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final watchlistData = context.watch<WatchlistData>();
     final sortedStocks = _getSortedStocks(watchlistData.stocks);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: _buildAppBar(context, watchlistData.stocks.length),
       body: watchlistData.stocks.isEmpty
           ? _buildEmpty(context)
           : Column(
               children: [
-                _buildSortBar(),
-                _buildDisclaimer(),
+                _buildSortBar(context),
+                _buildDisclaimer(context),
                 Expanded(child: _buildList(context, sortedStocks)),
               ],
             ),
@@ -108,9 +109,10 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   }
 
   PreferredSizeWidget _buildAppBar(BuildContext context, int count) {
+    final theme = Theme.of(context);
     return AppBar(
-      backgroundColor: const Color(0xFF1B5E20),
-      foregroundColor: Colors.white,
+      backgroundColor: theme.colorScheme.primary,
+      foregroundColor: theme.appBarTheme.foregroundColor ?? Colors.white,
       elevation: 0,
       centerTitle: false,
       title: const Text(
@@ -128,7 +130,8 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             child: Text(
               '$count stocks',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.75),
+                color: (theme.appBarTheme.foregroundColor ?? Colors.white)
+                    .withOpacity(0.75),
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
@@ -139,42 +142,47 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     );
   }
 
-  // ── Sort chips bar ──────────────────────────────────────────────────────
-  Widget _buildSortBar() {
+  // -- Sort chips bar ------------------------------------------------------
+  Widget _buildSortBar(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      color: const Color(0xFFF5F7FA),
+      color: Theme.of(context).scaffoldBackgroundColor,
       child: Row(
         children: [
-          _buildSortChip('Gainers', SortOption.gainers),
+          _buildSortChip(context, 'Gainers', SortOption.gainers),
           const SizedBox(width: 10),
-          _buildSortChip('Losers', SortOption.losers),
+          _buildSortChip(context, 'Losers', SortOption.losers),
           const SizedBox(width: 10),
-          _buildSortChip('A-Z', SortOption.alphabetical),
+          _buildSortChip(context, 'A-Z', SortOption.alphabetical),
         ],
       ),
     );
   }
 
-  Widget _buildSortChip(String label, SortOption option) {
+  Widget _buildSortChip(BuildContext context, String label, SortOption option) {
+    final theme = Theme.of(context);
     final isSelected = _currentSort == option;
     return GestureDetector(
       onTap: () => setState(() => _currentSort = option),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1B5E20) : Colors.white,
+          color: isSelected ? theme.colorScheme.primary : theme.cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? const Color(0xFF1B5E20) : Colors.grey.shade300,
+            color: isSelected
+                ? theme.colorScheme.primary
+                : theme.colorScheme.outlineVariant,
             width: 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade700,
+            color: isSelected
+                ? theme.colorScheme.onPrimary
+                : theme.colorScheme.onSurfaceVariant,
             fontSize: 13,
             fontWeight: FontWeight.w600,
           ),
@@ -183,31 +191,32 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     );
   }
 
-  // ── Subtle price-delay disclaimer ───────────────────────────────────────
-  Widget _buildDisclaimer() {
+  // -- Subtle price-delay disclaimer --------------------------------------
+  Widget _buildDisclaimer(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.only(bottom: 8),
-      color: const Color(0xFFF5F7FA),
+      color: Theme.of(context).scaffoldBackgroundColor,
       alignment: Alignment.center,
-      child: const Text(
+      child: Text(
         '⚠️ Prices may be delayed by 15–20 minutes',
         textAlign: TextAlign.center,
         style: TextStyle(
           fontSize: 11,
-          color: Color(0xFF9E9E9E),
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
     );
   }
 
-  // ── List ────────────────────────────────────────────────────────────────
+  // -- List ----------------------------------------------------------------
   Widget _buildList(BuildContext context, List<WatchlistStock> stocks) {
+    final theme = Theme.of(context);
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 12),
       itemCount: stocks.length,
       separatorBuilder: (_, __) =>
-          Divider(color: Colors.grey.shade200, height: 1, indent: 16, endIndent: 16),
+          Divider(color: theme.colorScheme.outlineVariant, height: 1, indent: 16, endIndent: 16),
       itemBuilder: (context, index) {
         final stock = stocks[index];
         return _StockTile(
@@ -219,8 +228,9 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
     );
   }
 
-  // ── Empty state ──────────────────────────────────────────────────────────
+  // -- Empty state ---------------------------------------------------------
   Widget _buildEmpty(BuildContext context) {
+    final theme = Theme.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -229,17 +239,17 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: const Color(0xFF1B5E20).withOpacity(0.1),
+              color: theme.colorScheme.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.bookmark_border_rounded,
-                color: Color(0xFF1B5E20), size: 34),
+            child: Icon(Icons.bookmark_border_rounded,
+                color: theme.colorScheme.primary, size: 34),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'No stocks saved yet',
             style: TextStyle(
-              color: Color(0xFF1A1A1A),
+              color: theme.colorScheme.onSurface,
               fontSize: 18,
               fontWeight: FontWeight.w600,
             ),
@@ -249,7 +259,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
             'Search for a stock and tap the\nbookmark icon to add it here.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: theme.colorScheme.onSurfaceVariant,
               fontSize: 14,
               height: 1.5,
             ),
@@ -260,7 +270,7 @@ class _WatchlistScreenState extends State<WatchlistScreen> {
   }
 }
 
-// ─── Stock tile ───────────────────────────────────────────────────────────────
+// --- Stock tile ----------------------------------------------------------------
 class _StockTile extends StatelessWidget {
   final WatchlistStock stock;
   final VoidCallback onRemove;
@@ -274,6 +284,7 @@ class _StockTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isPositive = stock.changePercent >= 0;
     final changeColor = isPositive ? Colors.green.shade700 : Colors.red.shade700;
     final changeBg = isPositive ? Colors.green.shade50 : Colors.red.shade50;
@@ -286,7 +297,7 @@ class _StockTile extends StatelessWidget {
       onDismissed: (_) => onSwipeRemove(),
       background: const _SwipeBackground(),
       child: Material(
-        color: const Color(0xFFF5F7FA),
+        color: theme.scaffoldBackgroundColor,
         child: InkWell(
           onTap: () {
             Navigator.push(
@@ -299,7 +310,7 @@ class _StockTile extends StatelessWidget {
               ),
             );
           },
-          splashColor: const Color(0xFF1B5E20).withOpacity(0.08),
+          splashColor: theme.colorScheme.primary.withOpacity(0.08),
           highlightColor: Colors.transparent,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -313,8 +324,8 @@ class _StockTile extends StatelessWidget {
                     children: [
                       Text(
                         stock.symbol,
-                        style: const TextStyle(
-                          color: Color(0xFF1A1A1A),
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurface,
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.2,
@@ -324,7 +335,7 @@ class _StockTile extends StatelessWidget {
                       Text(
                         stock.name,
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          color: theme.colorScheme.onSurfaceVariant,
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
                         ),
@@ -339,11 +350,11 @@ class _StockTile extends StatelessWidget {
                   children: [
                     Text(
                       '₹${_formatPrice(stock.price)}',
-                      style: const TextStyle(
-                        color: Color(0xFF1A1A1A),
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        fontFeatures: [FontFeature.tabularFigures()],
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -373,7 +384,7 @@ class _StockTile extends StatelessWidget {
                     padding: const EdgeInsets.only(left: 8),
                     child: Icon(
                       Icons.bookmark_remove_outlined,
-                      color: Colors.grey.shade600,
+                      color: theme.colorScheme.onSurfaceVariant,
                       size: 22,
                     ),
                   ),
@@ -403,7 +414,7 @@ class _StockTile extends StatelessWidget {
   }
 }
 
-// ─── Ticker avatar ────────────────────────────────────────────────────────────
+// --- Ticker avatar -------------------------------------------------------------
 class _TickerAvatar extends StatelessWidget {
   final String symbol;
 
@@ -443,7 +454,7 @@ class _TickerAvatar extends StatelessWidget {
   }
 }
 
-// ─── Swipe-to-delete background ───────────────────────────────────────────────
+// --- Swipe-to-delete background ------------------------------------------------
 class _SwipeBackground extends StatelessWidget {
   const _SwipeBackground();
 
@@ -472,7 +483,7 @@ class _SwipeBackground extends StatelessWidget {
   }
 }
 
-// ─── Confirm-remove bottom sheet ──────────────────────────────────────────────
+// --- Confirm-remove bottom sheet -----------------------------------------------
 class _RemoveSheet extends StatelessWidget {
   final String stockName;
 
@@ -480,6 +491,7 @@ class _RemoveSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 36),
       child: Column(
@@ -491,16 +503,16 @@ class _RemoveSheet extends StatelessWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: theme.colorScheme.outlineVariant,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Remove from Watchlist?',
             style: TextStyle(
-              color: Color(0xFF1A1A1A),
+              color: theme.colorScheme.onSurface,
               fontSize: 17,
               fontWeight: FontWeight.w700,
             ),
@@ -509,7 +521,7 @@ class _RemoveSheet extends StatelessWidget {
           Text(
             '$stockName will be removed. You can add it again anytime from Search.',
             style: TextStyle(
-              color: Colors.grey.shade600,
+              color: theme.colorScheme.onSurfaceVariant,
               fontSize: 14,
               height: 1.5,
             ),
@@ -521,8 +533,8 @@ class _RemoveSheet extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context, false),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF1A1A1A),
-                    side: BorderSide(color: Colors.grey.shade300),
+                    foregroundColor: theme.colorScheme.onSurface,
+                    side: BorderSide(color: theme.colorScheme.outlineVariant),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
