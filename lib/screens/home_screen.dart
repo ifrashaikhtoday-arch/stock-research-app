@@ -8,6 +8,7 @@ import 'compare_screen.dart';
 import 'portfolio_screen.dart';
 import 'news_screen.dart';
 import 'profile_screen.dart';
+import 'settings_screen.dart';
 import 'package:flutter/animation.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -132,6 +133,9 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (index == 3) {
       Navigator.push(context,
           MaterialPageRoute(builder: (context) => const NewsScreen()));
+    } else if (index == 4) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (context) => const SettingsScreen()));
     } else {
       setState(() => _selectedIndex = index);
     }
@@ -708,6 +712,10 @@ Widget _buildIndexCard() {
               icon: Icon(Icons.newspaper_outlined),
               activeIcon: Icon(Icons.newspaper),
               label: 'News'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings),
+              label: 'Settings'),
         ],
       ),
     );
