@@ -57,13 +57,16 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
     }
   }
 
-  void _goToLogin() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-    );
+ Future<void> _goToLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('seen_walkthrough', true);
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
