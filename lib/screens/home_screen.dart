@@ -9,6 +9,7 @@ import 'portfolio_screen.dart';
 import 'news_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -233,23 +234,49 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const ProfileScreen()),
-                        ),
-                        child: Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.onPrimary
-                                .withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                      const NotificationsScreen()),
+                            ),
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.onPrimary
+                                    .withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(Icons.notifications_outlined,
+                                  color: theme.colorScheme.onPrimary,
+                                  size: 24),
+                            ),
                           ),
-                          child: Icon(Icons.person,
-                              color: theme.colorScheme.onPrimary, size: 24),
-                        ),
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const ProfileScreen()),
+                            ),
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.onPrimary
+                                    .withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(Icons.person,
+                                  color: theme.colorScheme.onPrimary,
+                                  size: 24),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
