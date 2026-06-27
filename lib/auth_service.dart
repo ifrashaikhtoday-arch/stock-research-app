@@ -1,6 +1,9 @@
+import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'navigation_key.dart';
+import 'screens/stock_detail_screen.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -103,5 +106,56 @@ class AuthService {
       // shouldn't block login/signup from succeeding.
       print('Error registering FCM token: $e');
     }
+  }
+
+  // ===========================================================
+  // NOTIFICATION TAP NAVIGATION
+  // ===========================================================
+  //
+  // When the user taps a price-alert push notification, this opens
+  // the relevant stock's detail screen directly, instead of just
+  // landing on the app's home screen.
+  //
+  // Our backend sends "symbol" and "companyName" inside the
+  // notification's data payload -- we read those here.
+  //
+  // Call this once, early in main(), regardless of login state.
+  void setupNotificationTapHandling() {
+    final messaging = FirebaseMessaging.instance;
+
+    // Case 1: App was already open in the background, user taps the
+    // notification to bring it to the foreground.
+    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+      _navigateFromNotification(message.data);
+    });
+
+    // Case 2: App was completely closed (terminated), and the user
+    // opened it by tapping the notification. Check for this once,
+    // shortly after startup.
+    messaging.getInitialMessage().then((message) {
+      if (message != null) {
+        _navigateFromNotification(message.data);
+      }
+    });
+  }
+
+  void _navigateFromNotification(Map<String, dynamic> data) {
+    final symbol = data['symbol'];
+    if (symbol == null) return;
+
+    final companyName = data['companyName'] ?? symbol;
+
+    // A short delay helps make sure the app's navigator is fully ready,
+    // especially when opening fresh from a terminated state.
+    Future.delayed(const Duration(milliseconds: 300), () {
+      navigatorKey.currentState?.push(
+        MaterialPageRoute(
+          builder: (context) => StockDetailScreen(
+            symbol: symbol,
+            companyName: companyName,
+          ),
+        ),
+      );
+    });
   }
 }

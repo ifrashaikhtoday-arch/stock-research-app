@@ -10,6 +10,8 @@ import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/splash_screen.dart';
 import 'data/watchlist_data.dart';
+import 'navigation_key.dart';
+import 'auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +23,10 @@ void main() async {
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: false,
   );
+
+  // Listen for taps on push notifications (e.g. price alerts) so we can
+  // navigate straight to the relevant stock's detail screen.
+  AuthService().setupNotificationTapHandling();
 
   runApp(
     MultiProvider(
@@ -40,6 +46,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'StockSense',
       debugShowCheckedModeBanner: false,
       theme: themeNotifier.currentTheme,
