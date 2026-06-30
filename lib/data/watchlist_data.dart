@@ -78,13 +78,11 @@ class WatchlistData extends ChangeNotifier {
       for (final doc in snapshot.docs) {
         final data = doc.data();
 
-        // Only show docs that are actually in the watchlist.
-        // (A doc could exist only because of an alert, with no
-        //  watchlist fields -- skip those here.)
-        final isInWatchlist = data['inWatchlist'] == true ||
-            data.containsKey('addedAt') ||
-            data.containsKey('name');
-        if (!isInWatchlist) continue;
+        // Only show docs that are ACTUALLY in the watchlist.
+        // A doc with inWatchlist == false is alert-only -- skip it.
+        // (We strictly require inWatchlist == true now, so removed
+        //  stocks that still have an alert won't reappear.)
+        if (data['inWatchlist'] != true) continue;
 
         final symbol = (data['symbol'] ?? doc.id).toString();
         final name =
@@ -165,13 +163,14 @@ class WatchlistData extends ChangeNotifier {
       final data = snapshot.data();
 
       // If this stock still has an active alert, DON'T delete the doc --
-      // just clear the watchlist-specific fields so the alert survives.
+      // just mark it as not in the watchlist so the alert survives.
       if (data != null && data['alertSet'] == true) {
         await docRef.update({
           'inWatchlist': false,
           'addedAt': FieldValue.delete(),
           'price': FieldValue.delete(),
           'changePercent': FieldValue.delete(),
+          'name': FieldValue.delete(),
         });
       } else {
         // No alert -- safe to delete the whole document
