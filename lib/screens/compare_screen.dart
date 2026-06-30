@@ -288,6 +288,7 @@ void _updateSuggestions(int stockNumber, String query) {
         if (suggestions.isNotEmpty)
           Container(
             margin: const EdgeInsets.only(top: 4),
+            constraints: const BoxConstraints(maxHeight: 200),
             decoration: BoxDecoration(
               color: theme.cardColor,
               borderRadius: BorderRadius.circular(12),
@@ -296,8 +297,9 @@ void _updateSuggestions(int stockNumber, String query) {
                     color: Colors.black.withOpacity(0.08), blurRadius: 8),
               ],
             ),
-            child: Column(
-              children: suggestions.map((entry) {
+            child: SingleChildScrollView(
+              child: Column(
+                children: suggestions.map((entry) {
                 return ListTile(
                   dense: true,
                   leading: Icon(Icons.search,
@@ -306,6 +308,8 @@ void _updateSuggestions(int stockNumber, String query) {
                     entry.key[0].toUpperCase() + entry.key.substring(1),
                     style: TextStyle(
                         fontSize: 13, color: theme.colorScheme.onSurface),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                   trailing: Text(
                     entry.value.replaceAll('.NS', ''),
@@ -319,6 +323,7 @@ void _updateSuggestions(int stockNumber, String query) {
                   },
                 );
               }).toList(),
+              ),
             ),
           ),
         if (error != null)
