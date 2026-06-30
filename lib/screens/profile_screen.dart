@@ -54,6 +54,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .collection('users')
           .doc(uid)
           .collection('watchlist')
+          .where('inWatchlist', isEqualTo: true)
           .get();
       if (mounted) {
         setState(() => _watchlistCount = snapshot.docs.length);
