@@ -262,12 +262,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLow,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: theme.colorScheme.onPrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(
                   color: theme.colorScheme.primary))
-          : SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
+          : RefreshIndicator(
+              onRefresh: _loadData,
+              color: theme.colorScheme.primary,
+              child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics()),
               child: Column(
                 children: [
                   _buildHeader(theme),
@@ -314,6 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
+            ),
             ),
     );
   }
