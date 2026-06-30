@@ -20,7 +20,32 @@ class _CompareScreenState extends State<CompareScreen> {
   bool _isLoading2 = false;
   String? _error1;
   String? _error2;
-
+  List<MapEntry<String, String>> _suggestions1 = [];
+  List<MapEntry<String, String>> _suggestions2 = [];
+void _updateSuggestions(int stockNumber, String query) {
+    if (query.trim().isEmpty) {
+      setState(() {
+        if (stockNumber == 1) {
+          _suggestions1 = [];
+        } else {
+          _suggestions2 = [];
+        }
+      });
+      return;
+    }
+    final lower = query.trim().toLowerCase();
+    final matches = stockSymbols.entries
+        .where((entry) => entry.key.contains(lower))
+        .take(5)
+        .toList();
+    setState(() {
+      if (stockNumber == 1) {
+        _suggestions1 = matches;
+      } else {
+        _suggestions2 = matches;
+      }
+    });
+  }
   Future<void> _searchStock(int stockNumber, String query) async {
     if (query.trim().isEmpty) return;
 
@@ -63,11 +88,13 @@ class _CompareScreenState extends State<CompareScreen> {
         setState(() {
           _stock1 = data;
           _isLoading1 = false;
+          _suggestions1 = [];
         });
       } else {
         setState(() {
           _stock2 = data;
           _isLoading2 = false;
+          _suggestions2 = [];
         });
       }
     } catch (e) {
@@ -214,6 +241,7 @@ class _CompareScreenState extends State<CompareScreen> {
       ThemeData theme, int number, TextEditingController controller) {
     final isLoading = number == 1 ? _isLoading1 : _isLoading2;
     final error = number == 1 ? _error1 : _error2;
+    final suggestions = number == 1 ? _suggestions1 : _suggestions2;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,9 +281,46 @@ class _CompareScreenState extends State<CompareScreen> {
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 12),
             ),
+            onChanged: (value) => _updateSuggestions(number, value),
             onSubmitted: (value) => _searchStock(number, value),
           ),
         ),
+        if (suggestions.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.08), blurRadius: 8),
+              ],
+            ),
+            child: Column(
+              children: suggestions.map((entry) {
+                return ListTile(
+                  dense: true,
+                  leading: Icon(Icons.search,
+                      color: theme.colorScheme.primary, size: 16),
+                  title: Text(
+                    entry.key[0].toUpperCase() + entry.key.substring(1),
+                    style: TextStyle(
+                        fontSize: 13, color: theme.colorScheme.onSurface),
+                  ),
+                  trailing: Text(
+                    entry.value.replaceAll('.NS', ''),
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 11),
+                  ),
+                  onTap: () {
+                    controller.text = entry.key;
+                    _searchStock(number, entry.key);
+                  },
+                );
+              }).toList(),
+            ),
+          ),
         if (error != null)
           Padding(
             padding: const EdgeInsets.only(top: 4, left: 4),
