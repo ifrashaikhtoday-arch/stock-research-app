@@ -643,6 +643,24 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
               ),
             ),
           ],
+          lineTouchData: LineTouchData(
+            touchTooltipData: LineTouchTooltipData(
+              getTooltipColor: (touchedSpot) => const Color(0xFF1B5E20),
+              getTooltipItems: (touchedSpots) {
+                return touchedSpots.map((spot) {
+                  return LineTooltipItem(
+                    '₹${spot.y.toStringAsFixed(2)}',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  );
+                }).toList();
+              },
+            ),
+          ),
+        
           extraLinesData: ExtraLinesData(
             horizontalLines: [
               HorizontalLine(
