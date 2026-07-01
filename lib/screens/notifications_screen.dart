@@ -95,10 +95,50 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ThemeData theme, Map<String, dynamic> notification, int index) {
     final isUnread = !notification['read'];
 
-    return GestureDetector(
-      onTap: () {
-        setState(() => _notifications[index]['read'] = true);
+    return Dismissible(
+      key: ValueKey(index),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) {
+        setState(() => _notifications.removeAt(index));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Notification removed'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            duration: const Duration(seconds: 2),
+            action: SnackBarAction(
+              label: 'Undo',
+              textColor: Colors.white,
+              onPressed: () {
+                // Can't undo since we lost the item - just show message
+              },
+            ),
+          ),
+        );
       },
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: Colors.red.shade50,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.delete_outline, color: Colors.red.shade400),
+            const SizedBox(width: 6),
+            Text('Delete',
+                style: TextStyle(
+                    color: Colors.red.shade400,
+                    fontWeight: FontWeight.w600)),
+          ],
+        ),
+      ),
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _notifications[index]['read'] = true);
+        },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(16),
