@@ -8,7 +8,6 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  // Sample notifications — will be replaced with real data from Firebase later
   final List<Map<String, dynamic>> _notifications = [
     {
       'title': 'Price Alert Triggered',
@@ -85,7 +84,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               padding: const EdgeInsets.all(16),
               itemCount: _notifications.length,
               itemBuilder: (context, index) {
-                return _buildNotificationCard(theme, _notifications[index], index);
+                return _buildNotificationCard(
+                    theme, _notifications[index], index);
               },
             ),
     );
@@ -103,15 +103,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Notification removed'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
+            backgroundColor: theme.colorScheme.primary,
             duration: const Duration(seconds: 2),
-            action: SnackBarAction(
-              label: 'Undo',
-              textColor: Colors.white,
-              onPressed: () {
-                // Can't undo since we lost the item - just show message
-              },
-            ),
           ),
         );
       },
@@ -139,88 +132,89 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         onTap: () {
           setState(() => _notifications[index]['read'] = true);
         },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isUnread
-              ? theme.colorScheme.primary.withOpacity(0.05)
-              : theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: isUnread
-              ? Border.all(
-                  color: theme.colorScheme.primary.withOpacity(0.2))
-              : null,
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.04),
-                blurRadius: 8,
-                offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: (notification['color'] as Color).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isUnread
+                ? theme.colorScheme.primary.withOpacity(0.05)
+                : theme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: isUnread
+                ? Border.all(
+                    color: theme.colorScheme.primary.withOpacity(0.2))
+                : null,
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2)),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: (notification['color'] as Color).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  notification['icon'] as IconData,
+                  color: notification['color'] as Color,
+                  size: 22,
+                ),
               ),
-              child: Icon(
-                notification['icon'] as IconData,
-                color: notification['color'] as Color,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          notification['title'],
-                          style: TextStyle(
-                              fontWeight: isUnread
-                                  ? FontWeight.bold
-                                  : FontWeight.w600,
-                              fontSize: 14,
-                              color: theme.colorScheme.onSurface),
-                        ),
-                      ),
-                      if (isUnread)
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            shape: BoxShape.circle,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            notification['title'],
+                            style: TextStyle(
+                                fontWeight: isUnread
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                                fontSize: 14,
+                                color: theme.colorScheme.onSurface),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    notification['body'],
-                    style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    notification['time'],
-                    style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant
-                            .withOpacity(0.6),
-                        fontSize: 11),
-                  ),
-                ],
+                        if (isUnread)
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      notification['body'],
+                      style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      notification['time'],
+                      style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant
+                              .withOpacity(0.6),
+                          fontSize: 11),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
