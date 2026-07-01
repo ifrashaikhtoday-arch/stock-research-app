@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:xml/xml.dart';
+import 'dart:math';
 // Map of company names to NSE symbols
 const Map<String, String> stockSymbols = {
   'ola': 'OLAELEC.NS',
@@ -99,6 +101,13 @@ class StockData {
   final double high52Week;
   final double low52Week;
 
+  double? dayHigh;
+  double? dayLow;
+  double? marketCap;
+  double? bookValue;
+  double? dividendYield;
+  double? eps;
+
   StockData({
     required this.symbol,
     required this.companyName,
@@ -107,6 +116,12 @@ class StockData {
     required this.peRatio,
     required this.high52Week,
     required this.low52Week,
+    this.dayHigh,
+    this.dayLow,
+    this.marketCap,
+    this.bookValue,
+    this.dividendYield,
+    this.eps,
   });
 }
 // This holds one candle of data (one day or one hour)
@@ -125,7 +140,21 @@ class CandleData {
     required this.timestamp,
   });
 }
+class StockNews {
+  final String title;
+  final String source;
+  final String url;
+  final String publishedAt;
+  final String description;
 
+  StockNews({
+    required this.title,
+    required this.source,
+    required this.url,
+    required this.publishedAt,
+    required this.description,
+  });
+}
 class StockService {
   // Fetches full stock details for any Indian stock
   // Example symbols: RELIANCE.NS, TCS.NS, INFY.NS
@@ -155,6 +184,8 @@ class StockService {
         peRatio: (meta['trailingPE'] ?? 0).toDouble(),
         high52Week: (meta['fiftyTwoWeekHigh'] ?? 0).toDouble(),
         low52Week: (meta['fiftyTwoWeekLow'] ?? 0).toDouble(),
+        dayHigh: (meta['regularMarketDayHigh'] ?? 0).toDouble(),
+        dayLow: (meta['regularMarketDayLow'] ?? 0).toDouble(),
       );
     } else {
       throw Exception('Failed to fetch stock data for $symbol');
@@ -189,6 +220,63 @@ class StockService {
       print('Error fetching Sensex: $e');
     }
     return results;
+  }
+  Future<List<StockNews>> getStockNews(String companyName) async {
+    try {
+      final query = Uri.encodeComponent('$companyName stock');
+      final url = Uri.parse(
+          'https://news.google.com/rss/search?q=$query&hl=en-IN&gl=IN&ceid=IN:en');
+      final response = await http.get(url, headers: {
+        'User-Agent': 'Mozilla/5.0',
+      });
+
+      if (response.statusCode == 200) {
+        final document = XmlDocument.parse(response.body);
+        final items = document.findAllElements('item');
+        
+        return items.take(5).map((item) {
+          final title = item.findElements('title').firstOrNull?.innerText ?? '';
+          final link = item.findElements('link').firstOrNull?.innerText ?? '';
+          final pubDate = item.findElements('pubDate').firstOrNull?.innerText ?? '';
+          final source = item.findElements('source').firstOrNull?.innerText ?? 'News';
+          final description = item.findElements('description').firstOrNull?.innerText ?? '';
+
+          // Clean HTML tags from description
+          final cleanDesc = description
+              .replaceAll(RegExp(r'<[^>]*>'), '')
+              .trim();
+
+          // Format date
+          String formattedDate = pubDate;
+          try {
+            final date = DateTime.parse(pubDate);
+            final now = DateTime.now();
+            final diff = now.difference(date);
+            if (diff.inMinutes < 60) {
+              formattedDate = '${diff.inMinutes}m ago';
+            } else if (diff.inHours < 24) {
+              formattedDate = '${diff.inHours}h ago';
+            } else {
+              formattedDate = '${diff.inDays}d ago';
+            }
+          } catch (e) {
+            formattedDate = pubDate.substring(0, min(16, pubDate.length));
+          }
+
+          return StockNews(
+            title: title,
+            source: source,
+            url: link,
+            publishedAt: formattedDate,
+            description: cleanDesc,
+          );
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching news: $e');
+      return [];
+    }
   }
   // Fetches 30 days of closing prices for a stock
 Future<List<double>> getPriceHistory(String symbol, {String period = '1mo'}) async {

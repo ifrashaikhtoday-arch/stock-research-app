@@ -31,6 +31,8 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   String _selectedPeriod = '1mo';
   bool _isCandlestick = false;
   bool _isSaved = false;
+  List<StockNews> _news = [];
+  bool _isLoadingNews = false;
   bool _isSettingAlert = false;
 
   // Base URL for our Railway backend
@@ -41,6 +43,7 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
   void initState() {
     super.initState();
     _loadStockData();
+    _loadNews();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final watchlistData = Provider.of<WatchlistData>(context, listen: false);
       setState(() {
@@ -49,7 +52,18 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
       });
     });
   }
-
+Future<void> _loadNews() async {
+    setState(() => _isLoadingNews = true);
+    try {
+      final news = await _stockService.getStockNews(widget.companyName);
+      setState(() {
+        _news = news;
+        _isLoadingNews = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingNews = false);
+    }
+  }
   Future<void> _loadStockData({String period = '1mo'}) async {
     setState(() => _isLoading = true);
     try {
@@ -526,13 +540,157 @@ class _StockDetailScreenState extends State<StockDetailScreen> {
                         ),
                       ),
                      const SizedBox(height: 24),
+
+                      // News Section
+                      _buildNewsSection(theme),
+
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
               ),
     );
   }
+Widget _buildNewsSection(ThemeData theme) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Latest News',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurface)),
+              if (_isLoadingNews)
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.colorScheme.primary),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (_news.isEmpty && !_isLoadingNews)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'No news available for ${widget.companyName}',
+                style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 13),
+              ),
+            ),
+          ..._news.map((news) => _buildNewsCard(theme, news)),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildNewsCard(ThemeData theme, StockNews news) {
+    return GestureDetector(
+      onTap: () async {
+        // Open news URL
+        final uri = Uri.parse(news.url);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Opening: ${news.title}'),
+            backgroundColor: theme.colorScheme.primary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    news.source,
+                    style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  news.publishedAt,
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontSize: 11),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              news.title,
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurface),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (news.description.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                news.description,
+                style: TextStyle(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                    height: 1.4),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  'Read more →',
+                  style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   Widget _buildPeriodButtons(ThemeData theme) {
     final periods = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '3y', '5y'];
     final labels = ['1D', '5D', '1M', '3M', '6M', '1Y', '3Y', '5Y'];
