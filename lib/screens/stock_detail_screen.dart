@@ -9,6 +9,7 @@ import '../utils.dart';
 import 'package:provider/provider.dart';
 import '../data/watchlist_data.dart';
 import '../theme/app_theme.dart';
+import 'package:url_launcher/url_launcher.dart';
 class StockDetailScreen extends StatefulWidget {
   final String symbol;
   final String companyName;
@@ -599,15 +600,17 @@ Widget _buildNewsSection(ThemeData theme) {
   Widget _buildNewsCard(ThemeData theme, StockNews news) {
     return GestureDetector(
       onTap: () async {
-        // Open news URL
         final uri = Uri.parse(news.url);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Opening: ${news.title}'),
-            backgroundColor: theme.colorScheme.primary,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Could not open article'),
+              backgroundColor: theme.colorScheme.primary,
+            ),
+          );
+        }
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
