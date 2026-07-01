@@ -552,6 +552,134 @@ Future<void> _loadNews() async {
               ),
     );
   }
+Future<void> _showAISummary(StockNews news) async {
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 16),
+            const Text('Generating AI summary...'),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final response = await http.post(
+        Uri.parse('https://api.anthropic.com/v1/messages'),
+        headers: {
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+        },
+        body: jsonEncode({
+          'model': 'claude-sonnet-4-6',
+          'max_tokens': 150,
+          'messages': [
+            {
+              'role': 'user',
+              'content':
+                  'Summarize this stock news in exactly 60 words or less. Be concise and focus on key facts that matter to investors:\n\nTitle: ${news.title}\n\nDescription: ${news.description}'
+            }
+          ],
+        }),
+      );
+
+      Navigator.pop(context); // Close loading dialog
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final summary = data['content'][0]['text'];
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                Icon(Icons.auto_awesome,
+                    color: Theme.of(context).colorScheme.primary, size: 20),
+                const SizedBox(width: 8),
+                const Text('AI Summary',
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  news.title,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Colors.grey),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  summary,
+                  style: const TextStyle(fontSize: 14, height: 1.5),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '— Summarized by Claude AI in 60 words',
+                  style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 11,
+                      fontStyle: FontStyle.italic),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  final uri = Uri.parse(news.url);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri,
+                        mode: LaunchMode.externalApplication);
+                  }
+                },
+                child: Text('Read Full Article',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary)),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not generate summary. Try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Error generating summary'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 Widget _buildNewsSection(ThemeData theme) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -678,8 +806,34 @@ Widget _buildNewsSection(ThemeData theme) {
             ],
             const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                GestureDetector(
+                  onTap: () => _showAISummary(news),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome,
+                            size: 12, color: theme.colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'AI Summary',
+                          style: TextStyle(
+                              color: theme.colorScheme.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 Text(
                   'Read more →',
                   style: TextStyle(
